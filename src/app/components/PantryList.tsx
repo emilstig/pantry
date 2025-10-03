@@ -82,7 +82,7 @@ export default function PantryList({
       }
     });
 
-    // Sort items within each group by expiry date (nearest first)
+    // Sort items within each group by expiry date (earliest first)
     Object.keys(groups).forEach(year => {
       groups[year].sort((a, b) => {
         if (!a.expiry && !b.expiry) return 0;
@@ -123,7 +123,7 @@ export default function PantryList({
   const sortedYears = Object.keys(groupedItems).sort((a, b) => {
     if (a === "No date") return 1;
     if (b === "No date") return -1;
-    return parseInt(b) - parseInt(a);
+    return parseInt(a) - parseInt(b);
   });
 
   if (items.length === 0) {

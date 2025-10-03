@@ -40,7 +40,7 @@ export function useSupabaseWithFallback() {
       const { data, error } = await supabase
         .from("pantry_items")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: true });
 
       if (error) {
         console.error("Supabase error, falling back to localStorage:", error);
@@ -67,8 +67,13 @@ export function useSupabaseWithFallback() {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
           const parsedItems = JSON.parse(stored);
-          setItems(parsedItems);
-          console.log("Loaded items from localStorage:", parsedItems);
+          // Sort by creation date, oldest first
+          const sortedItems = parsedItems.sort(
+            (a: any, b: any) =>
+              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
+          setItems(sortedItems);
+          console.log("Loaded items from localStorage:", sortedItems);
         }
       }
     } catch (err) {
@@ -96,7 +101,7 @@ export function useSupabaseWithFallback() {
 
         if (usingFallback) {
           // Use localStorage
-          const updatedItems = [newItem, ...items];
+          const updatedItems = [...items, newItem];
           setItems(updatedItems);
           saveToLocalStorage(updatedItems);
           console.log("Added item to localStorage:", newItem);
@@ -123,7 +128,7 @@ export function useSupabaseWithFallback() {
               error
             );
             setUsingFallback(true);
-            const updatedItems = [newItem, ...items];
+            const updatedItems = [...items, newItem];
             setItems(updatedItems);
             saveToLocalStorage(updatedItems);
             return;
@@ -142,7 +147,7 @@ export function useSupabaseWithFallback() {
             updatedAt: data.updated_at,
           };
 
-          setItems(prev => [dbItem, ...prev]);
+          setItems(prev => [...prev, dbItem]);
           console.log("Added item to Supabase:", dbItem);
         }
       } catch (err) {
