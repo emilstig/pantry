@@ -1,0 +1,263 @@
+.openButton {
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  
+  &:hover {
+    background: #059669;
+  }
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  
+  h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1f2937;
+  }
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  
+  &:hover {
+    background: #f3f4f6;
+  }
+}
+
+.content {
+  padding: 24px;
+}
+
+.instructions {
+  margin-bottom: 20px;
+  
+  h4 {
+    margin: 0 0 12px 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #374151;
+  }
+  
+  ul {
+    margin: 0 0 16px 0;
+    padding-left: 20px;
+    
+    li {
+      margin-bottom: 4px;
+      font-size: 0.875rem;
+      color: #6b7280;
+      
+      code {
+        background: #f3f4f6;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        color: #1f2937;
+      }
+    }
+  }
+  
+  p {
+    margin: 0 0 8px 0;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+  }
+}
+
+.example {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 12px;
+  font-size: 0.8rem;
+  color: #475569;
+  white-space: pre-wrap;
+  margin: 0;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 120px;
+  margin-bottom: 16px;
+  
+  &:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.parseButton,
+.clearButton {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.parseButton {
+  background: #3b82f6;
+  color: white;
+  
+  &:hover {
+    background: #2563eb;
+  }
+}
+
+.clearButton {
+  background: #6b7280;
+  color: white;
+  
+  &:hover {
+    background: #4b5563;
+  }
+}
+
+.preview {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 20px;
+  
+  h4 {
+    margin: 0 0 12px 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #374151;
+  }
+}
+
+.previewList {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+
+.previewItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid #f3f4f6;
+  
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.itemName {
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.itemDetails {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.importButton {
+  width: 100%;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  
+  &:hover:not(:disabled) {
+    background: #059669;
+  }
+  
+  &:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+  }
+}
+
+@media (max-width: 640px) {
+  .overlay {
+    padding: 10px;
+  }
+  
+  .modal {
+    max-height: 95vh;
+  }
+  
+  .content {
+    padding: 16px;
+  }
+  
+  .actions {
+    flex-direction: column;
+  }
+  
+  .previewItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}

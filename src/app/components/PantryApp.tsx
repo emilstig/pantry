@@ -1,14 +1,23 @@
 "use client";
 
-import { useLocalStorage } from "../hooks/useLocalStorage";
+import { useSupabaseWithFallback } from "../hooks/useSupabaseWithFallback";
 import { PantryItemFormData } from "../types/pantry";
 import PantryForm from "./PantryForm";
 import PantryList from "./PantryList";
 import styles from "./PantryApp.module.scss";
 
 export default function PantryApp() {
-  const { items, addItem, updateItem, deleteItem, clearAll, isClient } =
-    useLocalStorage();
+  const {
+    items,
+    addItem,
+    updateItem,
+    deleteItem,
+    clearAll,
+    isClient,
+    loading,
+    error,
+    usingFallback,
+  } = useSupabaseWithFallback();
 
   const handleAddItem = (formData: PantryItemFormData) => {
     addItem(formData);
@@ -38,11 +47,27 @@ export default function PantryApp() {
   };
 
   // Show loading state while client-side hydration is happening
-  if (!isClient) {
+  if (!isClient || loading) {
     return (
       <div className={styles.loading}>
         <div className={styles.spinner}></div>
         <p>Loading pantry...</p>
+      </div>
+    );
+  }
+
+  // Show error state if there's an error
+  if (error) {
+    return (
+      <div className={styles.error}>
+        <h2>Error</h2>
+        <p>{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className={styles.retryButton}
+        >
+          Retry
+        </button>
       </div>
     );
   }
@@ -54,6 +79,12 @@ export default function PantryApp() {
         <p className={styles.subtitle}>
           Keep track of your pantry items and never let food go to waste
         </p>
+        {usingFallback && (
+          <div className={styles.fallbackNotice}>
+            <span className={styles.fallbackIcon}>⚠️</span>
+            Using local storage (Supabase not configured)
+          </div>
+        )}
       </header>
 
       <main className={styles.main}>
