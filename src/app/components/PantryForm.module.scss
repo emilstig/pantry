@@ -75,8 +75,14 @@
   }
 }
 
+.formActions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
 .submitButton {
-  width: 100%;
+  flex: 1;
   background: #3b82f6;
   color: white;
   border: none;

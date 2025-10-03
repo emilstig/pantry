@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import { PantryItemFormData } from "../types/pantry";
+import BatchImport from "./BatchImport";
 import styles from "./PantryForm.module.scss";
 
 interface PantryFormProps {
   onSubmit: (data: PantryItemFormData) => void;
+  onBatchAdd?: (items: PantryItemFormData[]) => void;
 }
 
-export default function PantryForm({ onSubmit }: PantryFormProps) {
+export default function PantryForm({ onSubmit, onBatchAdd }: PantryFormProps) {
   const [formData, setFormData] = useState<PantryItemFormData>({
     name: "",
     quantity: 1,
@@ -164,9 +166,12 @@ export default function PantryForm({ onSubmit }: PantryFormProps) {
         )}
       </div>
 
-      <button type="submit" className={styles.submitButton}>
-        Add to Pantry
-      </button>
+      <div className={styles.formActions}>
+        <button type="submit" className={styles.submitButton}>
+          Add to Pantry
+        </button>
+        {onBatchAdd && <BatchImport onBatchAdd={onBatchAdd} />}
+      </div>
     </form>
   );
 }

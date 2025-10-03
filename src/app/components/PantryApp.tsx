@@ -23,6 +23,12 @@ export default function PantryApp() {
     addItem(formData);
   };
 
+  const handleBatchAdd = async (items: PantryItemFormData[]) => {
+    for (const item of items) {
+      await addItem(item);
+    }
+  };
+
   const handleUpdateItem = (
     id: string,
     updates: Partial<PantryItemFormData>
@@ -88,7 +94,7 @@ export default function PantryApp() {
       </header>
 
       <main className={styles.main}>
-        <PantryForm onSubmit={handleAddItem} />
+        <PantryForm onSubmit={handleAddItem} onBatchAdd={handleBatchAdd} />
         <PantryList
           items={items}
           onUpdateItem={handleUpdateItem}

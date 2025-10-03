@@ -38,10 +38,12 @@ export default function BatchImport({ onBatchAdd }: BatchImportProps) {
 
         // Pattern 1: "Name, quantity, unitQuantity unitUnit, expiry, notes"
         // Example: "Apples, 5, 200g, 2024-12-31, Organic"
-        const csvPattern = /^([^,]+),\s*(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)([gml]+),\s*([^,]*)(?:,\s*(.*))?$/i;
+        const csvPattern =
+          /^([^,]+),\s*(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)([gml]+),\s*([^,]*)(?:,\s*(.*))?$/i;
         const csvMatch = line.match(csvPattern);
         if (csvMatch) {
-          const [, name, quantity, unitQuantity, unitUnit, expiry, notes] = csvMatch;
+          const [, name, quantity, unitQuantity, unitUnit, expiry, notes] =
+            csvMatch;
           item = {
             name: name.trim(),
             quantity: parseFloat(quantity),
@@ -55,10 +57,12 @@ export default function BatchImport({ onBatchAdd }: BatchImportProps) {
         // Pattern 2: "Name - quantity x unitQuantity unitUnit (expiry) [notes]"
         // Example: "Milk - 2 x 500ml (2024-12-31) [Organic]"
         if (!item) {
-          const dashPattern = /^([^-]+)\s*-\s*(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)([gml]+)\s*(?:\(([^)]+)\))?\s*(?:\[([^\]]+)\])?$/i;
+          const dashPattern =
+            /^([^-]+)\s*-\s*(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)([gml]+)\s*(?:\(([^)]+)\))?\s*(?:\[([^\]]+)\])?$/i;
           const dashMatch = line.match(dashPattern);
           if (dashMatch) {
-            const [, name, quantity, unitQuantity, unitUnit, expiry, notes] = dashMatch;
+            const [, name, quantity, unitQuantity, unitUnit, expiry, notes] =
+              dashMatch;
             item = {
               name: name.trim(),
               quantity: parseFloat(quantity),
@@ -73,7 +77,8 @@ export default function BatchImport({ onBatchAdd }: BatchImportProps) {
         // Pattern 3: Simple format "Name quantity unitQuantity unitUnit"
         // Example: "Bread 2 500g"
         if (!item) {
-          const simplePattern = /^([^0-9]+)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)([gml]+)$/i;
+          const simplePattern =
+            /^([^0-9]+)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)([gml]+)$/i;
           const simpleMatch = line.match(simplePattern);
           if (simpleMatch) {
             const [, name, quantity, unitQuantity, unitUnit] = simpleMatch;
@@ -125,10 +130,7 @@ export default function BatchImport({ onBatchAdd }: BatchImportProps) {
 
   if (!isOpen) {
     return (
-      <button
-        onClick={() => setIsOpen(true)}
-        className={styles.openButton}
-      >
+      <button onClick={() => setIsOpen(true)} className={styles.openButton}>
         📥 Batch Import
       </button>
     );
@@ -151,13 +153,25 @@ export default function BatchImport({ onBatchAdd }: BatchImportProps) {
           <div className={styles.instructions}>
             <h4>Supported Formats:</h4>
             <ul>
-              <li><code>Name, quantity, unitQuantity unitUnit, expiry, notes</code></li>
-              <li><code>Name - quantity x unitQuantity unitUnit (expiry) [notes]</code></li>
-              <li><code>Name quantity unitQuantity unitUnit</code></li>
+              <li>
+                <code>
+                  Name, quantity, unitQuantity unitUnit, expiry, notes
+                </code>
+              </li>
+              <li>
+                <code>
+                  Name - quantity x unitQuantity unitUnit (expiry) [notes]
+                </code>
+              </li>
+              <li>
+                <code>Name quantity unitQuantity unitUnit</code>
+              </li>
             </ul>
-            <p><strong>Examples:</strong></p>
+            <p>
+              <strong>Examples:</strong>
+            </p>
             <pre className={styles.example}>
-{`Apples, 5, 200g, 2024-12-31, Organic
+              {`Apples, 5, 200g, 2024-12-31, Organic
 Milk - 2 x 500ml (2024-12-31) [Organic]
 Bread 2 500g`}
             </pre>
@@ -165,7 +179,7 @@ Bread 2 500g`}
 
           <textarea
             value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
+            onChange={e => setInputText(e.target.value)}
             placeholder="Paste your items here, one per line..."
             className={styles.textarea}
             rows={8}
@@ -188,7 +202,8 @@ Bread 2 500g`}
                   <div key={index} className={styles.previewItem}>
                     <span className={styles.itemName}>{item.name}</span>
                     <span className={styles.itemDetails}>
-                      {item.quantity} × {item.unitQuantity}{item.unitUnit}
+                      {item.quantity} × {item.unitQuantity}
+                      {item.unitUnit}
                       {item.expiry && ` (${item.expiry})`}
                       {item.notes && ` [${item.notes}]`}
                     </span>
@@ -200,7 +215,9 @@ Bread 2 500g`}
                 disabled={isImporting}
                 className={styles.importButton}
               >
-                {isImporting ? "Importing..." : `Import ${parsedItems.length} Items`}
+                {isImporting
+                  ? "Importing..."
+                  : `Import ${parsedItems.length} Items`}
               </button>
             </div>
           )}
