@@ -73,7 +73,7 @@ This project uses SCSS modules for component-scoped styling. Example:
 .welcome {
   padding: 2rem;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  
+
   h1 {
     font-size: 2.5rem;
     color: white;

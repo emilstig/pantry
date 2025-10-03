@@ -39,7 +39,7 @@
   justify-content: center;
   min-height: 200px;
   color: #6b7280;
-  
+
   p {
     margin: 16px 0 0 0;
     font-size: 1rem;
@@ -56,23 +56,27 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 640px) {
   .app {
     padding: 16px;
   }
-  
+
   .title {
     font-size: 2rem;
   }
-  
+
   .subtitle {
     font-size: 1rem;
   }
-  
+
   .header {
     margin-bottom: 32px;
   }

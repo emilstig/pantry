@@ -2,7 +2,9 @@
   background: white;
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
   border: 1px solid #e5e7eb;
 }
 
@@ -32,7 +34,7 @@
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s;
-  
+
   &:hover {
     background: #b91c1c;
   }
@@ -42,13 +44,13 @@
   text-align: center;
   padding: 48px 24px;
   color: #6b7280;
-  
+
   h3 {
     margin: 0 0 8px 0;
     font-size: 1.25rem;
     font-weight: 600;
   }
-  
+
   p {
     margin: 0;
     font-size: 1rem;
@@ -57,7 +59,7 @@
 
 .yearGroup {
   margin-bottom: 32px;
-  
+
   &:last-child {
     margin-bottom: 0;
   }
@@ -82,8 +84,10 @@
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   background: #fafafa;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+
   &:hover {
     border-color: #d1d5db;
     box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
@@ -146,22 +150,22 @@
   font-weight: 500;
   padding: 4px 8px;
   border-radius: 4px;
-  
+
   &.good {
     background: #dcfce7;
     color: #166534;
   }
-  
+
   &.expiring-week {
     background: #fef3c7;
     color: #92400e;
   }
-  
+
   &.expiring-soon {
     background: #fed7d7;
     color: #991b1b;
   }
-  
+
   &.expired {
     background: #f3f4f6;
     color: #6b7280;
@@ -196,7 +200,7 @@
   cursor: pointer;
   font-size: 0.875rem;
   transition: all 0.2s;
-  
+
   &:hover {
     background: #f3f4f6;
     border-color: #9ca3af;
@@ -233,7 +237,7 @@
   border-radius: 4px;
   font-size: 0.875rem;
   margin-bottom: 8px;
-  
+
   &:focus {
     outline: none;
     border-color: #3b82f6;
@@ -273,7 +277,7 @@
 .saveButton {
   background: #10b981;
   color: white;
-  
+
   &:hover {
     background: #059669;
   }
@@ -282,7 +286,7 @@
 .cancelButton {
   background: #6b7280;
   color: white;
-  
+
   &:hover {
     background: #4b5563;
   }
@@ -292,20 +296,20 @@
   .container {
     padding: 16px;
   }
-  
+
   .itemContent {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .itemActions {
     justify-content: flex-end;
   }
-  
+
   .editRow {
     grid-template-columns: 1fr;
   }
-  
+
   .header {
     flex-direction: column;
     align-items: stretch;

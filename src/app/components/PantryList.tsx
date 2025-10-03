@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { PantryItem } from '../types/pantry';
-import styles from './PantryList.module.scss';
+import { useState } from "react";
+import { PantryItem } from "../types/pantry";
+import styles from "./PantryList.module.scss";
 
 interface PantryListProps {
   items: PantryItem[];
@@ -16,7 +16,12 @@ interface EditingItem {
   data: Partial<PantryItem>;
 }
 
-export default function PantryList({ items, onUpdateItem, onDeleteItem, onClearAll }: PantryListProps) {
+export default function PantryList({
+  items,
+  onUpdateItem,
+  onDeleteItem,
+  onClearAll,
+}: PantryListProps) {
   const [editingItem, setEditingItem] = useState<EditingItem | null>(null);
 
   const startEditing = (item: PantryItem) => {
@@ -44,7 +49,10 @@ export default function PantryList({ items, onUpdateItem, onDeleteItem, onClearA
     }
   };
 
-  const updateEditingField = (field: keyof PantryItem, value: string | number) => {
+  const updateEditingField = (
+    field: keyof PantryItem,
+    value: string | number
+  ) => {
     if (editingItem) {
       setEditingItem({
         ...editingItem,
@@ -58,13 +66,13 @@ export default function PantryList({ items, onUpdateItem, onDeleteItem, onClearA
 
   const groupItemsByYear = (items: PantryItem[]) => {
     const groups: { [key: string]: PantryItem[] } = {};
-    
+
     items.forEach(item => {
       if (!item.expiry) {
-        if (!groups['No date']) {
-          groups['No date'] = [];
+        if (!groups["No date"]) {
+          groups["No date"] = [];
         }
-        groups['No date'].push(item);
+        groups["No date"].push(item);
       } else {
         const year = new Date(item.expiry).getFullYear().toString();
         if (!groups[year]) {
@@ -88,10 +96,10 @@ export default function PantryList({ items, onUpdateItem, onDeleteItem, onClearA
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     });
   };
 
@@ -105,16 +113,16 @@ export default function PantryList({ items, onUpdateItem, onDeleteItem, onClearA
 
   const getExpiryStatus = (expiryDate: string) => {
     const days = getDaysUntilExpiry(expiryDate);
-    if (days < 0) return 'expired';
-    if (days <= 3) return 'expiring-soon';
-    if (days <= 7) return 'expiring-week';
-    return 'good';
+    if (days < 0) return "expired";
+    if (days <= 3) return "expiring-soon";
+    if (days <= 7) return "expiring-week";
+    return "good";
   };
 
   const groupedItems = groupItemsByYear(items);
   const sortedYears = Object.keys(groupedItems).sort((a, b) => {
-    if (a === 'No date') return 1;
-    if (b === 'No date') return -1;
+    if (a === "No date") return 1;
+    if (b === "No date") return -1;
     return parseInt(b) - parseInt(a);
   });
 
@@ -147,8 +155,10 @@ export default function PantryList({ items, onUpdateItem, onDeleteItem, onClearA
                     <div className={styles.editingFields}>
                       <input
                         type="text"
-                        value={editingItem.data.name || ''}
-                        onChange={(e) => updateEditingField('name', e.target.value)}
+                        value={editingItem.data.name || ""}
+                        onChange={e =>
+                          updateEditingField("name", e.target.value)
+                        }
                         className={styles.editInput}
                         placeholder="Item name"
                       />
@@ -158,7 +168,12 @@ export default function PantryList({ items, onUpdateItem, onDeleteItem, onClearA
                           min="0.1"
                           step="0.1"
                           value={editingItem.data.quantity || 0}
-                          onChange={(e) => updateEditingField('quantity', parseFloat(e.target.value) || 0)}
+                          onChange={e =>
+                            updateEditingField(
+                              "quantity",
+                              parseFloat(e.target.value) || 0
+                            )
+                          }
                           className={styles.editInput}
                           placeholder="Quantity"
                         />
@@ -167,13 +182,20 @@ export default function PantryList({ items, onUpdateItem, onDeleteItem, onClearA
                           min="0.1"
                           step="0.1"
                           value={editingItem.data.unitQuantity || 0}
-                          onChange={(e) => updateEditingField('unitQuantity', parseFloat(e.target.value) || 0)}
+                          onChange={e =>
+                            updateEditingField(
+                              "unitQuantity",
+                              parseFloat(e.target.value) || 0
+                            )
+                          }
                           className={styles.editInput}
                           placeholder="Weight/volume per unit"
                         />
                         <select
-                          value={editingItem.data.unitUnit || 'g'}
-                          onChange={(e) => updateEditingField('unitUnit', e.target.value)}
+                          value={editingItem.data.unitUnit || "g"}
+                          onChange={e =>
+                            updateEditingField("unitUnit", e.target.value)
+                          }
                           className={styles.editSelect}
                         >
                           <option value="g">g</option>
@@ -182,24 +204,34 @@ export default function PantryList({ items, onUpdateItem, onDeleteItem, onClearA
                         </select>
                         <input
                           type="date"
-                          value={editingItem.data.expiry || ''}
-                          onChange={(e) => updateEditingField('expiry', e.target.value)}
+                          value={editingItem.data.expiry || ""}
+                          onChange={e =>
+                            updateEditingField("expiry", e.target.value)
+                          }
                           className={styles.editInput}
                         />
                       </div>
                       <textarea
-                        value={editingItem.data.notes || ''}
-                        onChange={(e) => updateEditingField('notes', e.target.value)}
+                        value={editingItem.data.notes || ""}
+                        onChange={e =>
+                          updateEditingField("notes", e.target.value)
+                        }
                         className={styles.editTextarea}
                         placeholder="Notes (optional)"
                         rows={2}
                       />
                     </div>
                     <div className={styles.editActions}>
-                      <button onClick={saveEditing} className={styles.saveButton}>
+                      <button
+                        onClick={saveEditing}
+                        className={styles.saveButton}
+                      >
                         Save
                       </button>
-                      <button onClick={cancelEditing} className={styles.cancelButton}>
+                      <button
+                        onClick={cancelEditing}
+                        className={styles.cancelButton}
+                      >
                         Cancel
                       </button>
                     </div>
@@ -210,19 +242,21 @@ export default function PantryList({ items, onUpdateItem, onDeleteItem, onClearA
                       <div className={styles.itemHeader}>
                         <h4 className={styles.itemName}>{item.name}</h4>
                         <span className={styles.itemQuantity}>
-                          {item.quantity} × {item.unitQuantity}{item.unitUnit}
+                          {item.quantity} × {item.unitQuantity}
+                          {item.unitUnit}
                         </span>
                       </div>
                       {item.expiry && (
                         <div className={styles.expiryInfo}>
-                          <span className={`${styles.expiryDate} ${styles[getExpiryStatus(item.expiry)]}`}>
+                          <span
+                            className={`${styles.expiryDate} ${styles[getExpiryStatus(item.expiry)]}`}
+                          >
                             {formatDate(item.expiry)}
                           </span>
                           <span className={styles.daysUntil}>
-                            {getDaysUntilExpiry(item.expiry) < 0 
-                              ? 'Expired' 
-                              : `${getDaysUntilExpiry(item.expiry)} days left`
-                            }
+                            {getDaysUntilExpiry(item.expiry) < 0
+                              ? "Expired"
+                              : `${getDaysUntilExpiry(item.expiry)} days left`}
                           </span>
                         </div>
                       )}
@@ -231,14 +265,14 @@ export default function PantryList({ items, onUpdateItem, onDeleteItem, onClearA
                       )}
                     </div>
                     <div className={styles.itemActions}>
-                      <button 
+                      <button
                         onClick={() => startEditing(item)}
                         className={styles.editButton}
                         title="Edit item"
                       >
                         ✏️
                       </button>
-                      <button 
+                      <button
                         onClick={() => onDeleteItem(item.id)}
                         className={styles.deleteButton}
                         title="Delete item"

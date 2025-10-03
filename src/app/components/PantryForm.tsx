@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { PantryItemFormData } from '../types/pantry';
-import styles from './PantryForm.module.scss';
+import { useState } from "react";
+import { PantryItemFormData } from "../types/pantry";
+import styles from "./PantryForm.module.scss";
 
 interface PantryFormProps {
   onSubmit: (data: PantryItemFormData) => void;
@@ -10,12 +10,12 @@ interface PantryFormProps {
 
 export default function PantryForm({ onSubmit }: PantryFormProps) {
   const [formData, setFormData] = useState<PantryItemFormData>({
-    name: '',
+    name: "",
     quantity: 1,
     unitQuantity: 1,
-    unitUnit: 'g',
-    expiry: '',
-    notes: '',
+    unitUnit: "g",
+    expiry: "",
+    notes: "",
   });
 
   const [showNotes, setShowNotes] = useState(false);
@@ -33,17 +33,20 @@ export default function PantryForm({ onSubmit }: PantryFormProps) {
 
     // Reset form
     setFormData({
-      name: '',
+      name: "",
       quantity: 1,
       unitQuantity: 1,
-      unitUnit: 'g',
-      expiry: '',
-      notes: '',
+      unitUnit: "g",
+      expiry: "",
+      notes: "",
     });
     setShowNotes(false);
   };
 
-  const handleChange = (field: keyof PantryItemFormData, value: string | number) => {
+  const handleChange = (
+    field: keyof PantryItemFormData,
+    value: string | number
+  ) => {
     setFormData(prev => ({
       ...prev,
       [field]: value,
@@ -53,23 +56,22 @@ export default function PantryForm({ onSubmit }: PantryFormProps) {
   return (
     <form onSubmit={handleSubmit} className={styles.form}>
       <h2 className={styles.title}>Add Pantry Item</h2>
-      
-      <div className={styles.fieldGroup}>
-        <label htmlFor="name" className={styles.label}>
-          Name *
-        </label>
-        <input
-          id="name"
-          type="text"
-          value={formData.name}
-          onChange={(e) => handleChange('name', e.target.value)}
-          className={styles.input}
-          placeholder="e.g., Milk, Bread, Apples"
-          required
-        />
-      </div>
 
       <div className={styles.row}>
+        <div className={styles.fieldGroup}>
+          <label htmlFor="name" className={styles.label}>
+            Name *
+          </label>
+          <input
+            id="name"
+            type="text"
+            value={formData.name}
+            onChange={e => handleChange("name", e.target.value)}
+            className={styles.input}
+            placeholder="e.g., Milk, Bread, Apples"
+            required
+          />
+        </div>
         <div className={styles.fieldGroup}>
           <label htmlFor="quantity" className={styles.label}>
             Quantity *
@@ -80,12 +82,16 @@ export default function PantryForm({ onSubmit }: PantryFormProps) {
             min="0.1"
             step="0.1"
             value={formData.quantity}
-            onChange={(e) => handleChange('quantity', parseFloat(e.target.value) || 0)}
+            onChange={e =>
+              handleChange("quantity", parseFloat(e.target.value) || 0)
+            }
             className={styles.input}
             required
           />
         </div>
+      </div>
 
+      <div className={styles.row}>
         <div className={styles.fieldGroup}>
           <label htmlFor="unitQuantity" className={styles.label}>
             Weight/Volume per Unit *
@@ -96,7 +102,9 @@ export default function PantryForm({ onSubmit }: PantryFormProps) {
             min="0.1"
             step="0.1"
             value={formData.unitQuantity}
-            onChange={(e) => handleChange('unitQuantity', parseFloat(e.target.value) || 0)}
+            onChange={e =>
+              handleChange("unitQuantity", parseFloat(e.target.value) || 0)
+            }
             className={styles.input}
             placeholder="e.g., 10"
             required
@@ -110,7 +118,9 @@ export default function PantryForm({ onSubmit }: PantryFormProps) {
           <select
             id="unitUnit"
             value={formData.unitUnit}
-            onChange={(e) => handleChange('unitUnit', e.target.value as 'g' | 'ml' | 'mg')}
+            onChange={e =>
+              handleChange("unitUnit", e.target.value as "g" | "ml" | "mg")
+            }
             className={styles.select}
             required
           >
@@ -129,7 +139,7 @@ export default function PantryForm({ onSubmit }: PantryFormProps) {
           id="expiry"
           type="date"
           value={formData.expiry}
-          onChange={(e) => handleChange('expiry', e.target.value)}
+          onChange={e => handleChange("expiry", e.target.value)}
           className={styles.input}
         />
       </div>
@@ -140,13 +150,13 @@ export default function PantryForm({ onSubmit }: PantryFormProps) {
           onClick={() => setShowNotes(!showNotes)}
           className={styles.toggleNotes}
         >
-          {showNotes ? 'Hide' : 'Add'} Notes (Optional)
+          {showNotes ? "Hide" : "Add"} Notes (Optional)
         </button>
-        
+
         {showNotes && (
           <textarea
             value={formData.notes}
-            onChange={(e) => handleChange('notes', e.target.value)}
+            onChange={e => handleChange("notes", e.target.value)}
             className={styles.textarea}
             placeholder="Any additional notes about this item..."
             rows={3}
