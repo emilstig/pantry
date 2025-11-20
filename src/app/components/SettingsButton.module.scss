@@ -1,0 +1,21 @@
+.settingsButton {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background: #e5e7eb;
+    border-color: #9ca3af;
+  }
+
+  &:active {
+    background: #d1d5db;
+  }
+}

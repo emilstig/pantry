@@ -94,6 +94,20 @@
   }
 }
 
+.replacedItem,
+.expiredItem {
+  background: #fee2e2;
+  border-color: #fecaca;
+
+  .itemName {
+    color: #991b1b;
+  }
+
+  .itemQuantity {
+    color: #b91c1c;
+  }
+}
+
 .itemContent {
   display: flex;
   justify-content: space-between;
@@ -156,12 +170,12 @@
     color: #166534;
   }
 
-  &.expiring-week {
+  &.expiring-soon {
     background: #fef3c7;
     color: #92400e;
   }
 
-  &.expiring-soon {
+  &.replace {
     background: #fed7d7;
     color: #991b1b;
   }
@@ -185,6 +199,13 @@
   line-height: 1.4;
 }
 
+.reminderInfo {
+  margin: 4px 0 0 0;
+  font-size: 0.75rem;
+  color: #d97706;
+  font-weight: 500;
+}
+
 .itemActions {
   display: flex;
   gap: 8px;
@@ -192,7 +213,9 @@
 }
 
 .editButton,
-.deleteButton {
+.deleteButton,
+.replacedButton,
+.usedButton {
   background: none;
   border: 1px solid #d1d5db;
   border-radius: 4px;
@@ -217,6 +240,33 @@
   border-color: #dc2626;
 }
 
+.replacedButton:hover {
+  background: #dcfce7;
+  border-color: #16a34a;
+}
+
+.usedButton {
+  border-color: #f87171;
+
+  &:hover {
+    background: #fee2e2;
+    border-color: #dc2626;
+  }
+}
+
+.replacedNotice {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #b91c1c;
+  background: #fee2e2;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
 .editingItem {
   padding: 16px;
   background: #f8fafc;
@@ -234,6 +284,7 @@
   width: 100%;
   padding: 8px 12px;
   border: 1px solid #d1d5db;
+  color: #1f2937;
   border-radius: 4px;
   font-size: 0.875rem;
   margin-bottom: 8px;

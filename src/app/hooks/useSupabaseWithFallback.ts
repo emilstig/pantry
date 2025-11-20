@@ -2,9 +2,37 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabase";
-import { PantryItem } from "../types/pantry";
+import { PantryItem, PantryItemFormData } from "../types/pantry";
 
 const STORAGE_KEY = "pantry-items";
+
+type SupabasePantryItem = {
+  id: string;
+  name: string;
+  quantity: number;
+  unit_quantity: number | null;
+  unit_unit: PantryItem["unitUnit"] | null;
+  expiry: string | null;
+  notes: string | null;
+  reminder_count: number | null;
+  is_replaced: boolean | null;
+  created_at: string;
+  updated_at: string;
+};
+
+const normalizeSupabaseItem = (data: SupabasePantryItem): PantryItem => ({
+  id: data.id,
+  name: data.name,
+  quantity: data.quantity,
+  unitQuantity: data.unit_quantity ?? 0,
+  unitUnit: (data.unit_unit ?? "g") as PantryItem["unitUnit"], // default to a valid unit
+  expiry: data.expiry ?? undefined,
+  notes: data.notes ?? undefined,
+  reminderCount: data.reminder_count ?? 0,
+  isReplaced: data.is_replaced ?? false,
+  createdAt: data.created_at,
+  updatedAt: data.updated_at,
+});
 
 export function useSupabaseWithFallback() {
   const [items, setItems] = useState<PantryItem[]>([]);
@@ -13,13 +41,34 @@ export function useSupabaseWithFallback() {
   const [error, setError] = useState<string | null>(null);
   const [usingFallback, setUsingFallback] = useState(false);
 
-  // Ensure we're on the client side
-  useEffect(() => {
-    setIsClient(true);
-    loadItems();
+  const saveToLocalStorage = useCallback((itemsToStore: PantryItem[]) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(itemsToStore));
+    }
   }, []);
 
-  const loadItems = async () => {
+  const loadFromLocalStorage = useCallback(() => {
+    try {
+      if (typeof window !== "undefined") {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          const parsedItems = JSON.parse(stored) as PantryItem[];
+          // Sort by creation date, oldest first
+          const sortedItems = [...parsedItems].sort(
+            (a, b) =>
+              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
+          setItems(sortedItems);
+          console.log("Loaded items from localStorage:", sortedItems);
+        }
+      }
+    } catch (err) {
+      console.error("Error loading from localStorage:", err);
+      setError("Failed to load items from both Supabase and localStorage");
+    }
+  }, []);
+
+  const loadItems = useCallback(async () => {
     try {
       setLoading(true);
       console.log("Attempting to load items from Supabase...");
@@ -50,7 +99,9 @@ export function useSupabaseWithFallback() {
       }
 
       console.log("Successfully loaded items from Supabase:", data);
-      setItems(data || []);
+      const normalizedItems = (data || []).map(normalizeSupabaseItem);
+      setItems(normalizedItems);
+      saveToLocalStorage(normalizedItems);
       setError(null);
     } catch (err) {
       console.error("Unexpected error, falling back to localStorage:", err);
@@ -59,42 +110,28 @@ export function useSupabaseWithFallback() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [loadFromLocalStorage, saveToLocalStorage]);
 
-  const loadFromLocalStorage = () => {
-    try {
-      if (typeof window !== "undefined") {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          const parsedItems = JSON.parse(stored);
-          // Sort by creation date, oldest first
-          const sortedItems = parsedItems.sort(
-            (a: any, b: any) =>
-              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-          );
-          setItems(sortedItems);
-          console.log("Loaded items from localStorage:", sortedItems);
-        }
-      }
-    } catch (err) {
-      console.error("Error loading from localStorage:", err);
-      setError("Failed to load items from both Supabase and localStorage");
-    }
-  };
+  // Ensure we're on the client side
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
-  const saveToLocalStorage = (items: PantryItem[]) => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  useEffect(() => {
+    if (isClient) {
+      loadItems();
     }
-  };
+  }, [isClient, loadItems]);
 
   const addItem = useCallback(
-    async (itemData: Omit<PantryItem, "id" | "createdAt" | "updatedAt">) => {
+    async (itemData: PantryItemFormData) => {
       try {
         setError(null);
         const newItem: PantryItem = {
           ...itemData,
           id: crypto.randomUUID(),
+          reminderCount: 0,
+          isReplaced: false,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
@@ -143,11 +180,17 @@ export function useSupabaseWithFallback() {
             unitUnit: data.unit_unit,
             expiry: data.expiry,
             notes: data.notes,
+            reminderCount: data.reminder_count || 0,
+            isReplaced: data.is_replaced || false,
             createdAt: data.created_at,
             updatedAt: data.updated_at,
           };
 
-          setItems(prev => [...prev, dbItem]);
+          setItems(prev => {
+            const updatedItems = [...prev, dbItem];
+            saveToLocalStorage(updatedItems);
+            return updatedItems;
+          });
           console.log("Added item to Supabase:", dbItem);
         }
       } catch (err) {
@@ -155,7 +198,7 @@ export function useSupabaseWithFallback() {
         setError("Failed to add item");
       }
     },
-    [items, usingFallback]
+    [items, usingFallback, saveToLocalStorage]
   );
 
   const updateItem = useCallback(
@@ -175,7 +218,19 @@ export function useSupabaseWithFallback() {
           console.log("Updated item in localStorage:", id);
         } else {
           // Use Supabase
-          const updateData: any = {};
+          const updateData: Partial<
+            Pick<
+              SupabasePantryItem,
+              | "name"
+              | "quantity"
+              | "unit_quantity"
+              | "unit_unit"
+              | "expiry"
+              | "notes"
+              | "is_replaced"
+              | "reminder_count"
+            >
+          > = {};
 
           if (updates.name !== undefined) updateData.name = updates.name;
           if (updates.quantity !== undefined)
@@ -186,6 +241,10 @@ export function useSupabaseWithFallback() {
             updateData.unit_unit = updates.unitUnit;
           if (updates.expiry !== undefined) updateData.expiry = updates.expiry;
           if (updates.notes !== undefined) updateData.notes = updates.notes;
+          if (updates.isReplaced !== undefined)
+            updateData.is_replaced = updates.isReplaced;
+          if (updates.reminderCount !== undefined)
+            updateData.reminder_count = updates.reminderCount;
 
           const { data, error } = await supabase
             .from("pantry_items")
@@ -219,13 +278,19 @@ export function useSupabaseWithFallback() {
             unitUnit: data.unit_unit,
             expiry: data.expiry,
             notes: data.notes,
+            reminderCount: data.reminder_count || 0,
+            isReplaced: data.is_replaced || false,
             createdAt: data.created_at,
             updatedAt: data.updated_at,
           };
 
-          setItems(prev =>
-            prev.map(item => (item.id === id ? updatedItem : item))
-          );
+          setItems(prev => {
+            const updatedItems = prev.map(item =>
+              item.id === id ? updatedItem : item
+            );
+            saveToLocalStorage(updatedItems);
+            return updatedItems;
+          });
           console.log("Updated item in Supabase:", updatedItem);
         }
       } catch (err) {
@@ -233,7 +298,7 @@ export function useSupabaseWithFallback() {
         setError("Failed to update item");
       }
     },
-    [items, usingFallback]
+    [items, usingFallback, saveToLocalStorage]
   );
 
   const deleteItem = useCallback(
@@ -266,7 +331,11 @@ export function useSupabaseWithFallback() {
             return;
           }
 
-          setItems(prev => prev.filter(item => item.id !== id));
+          setItems(prev => {
+            const updatedItems = prev.filter(item => item.id !== id);
+            saveToLocalStorage(updatedItems);
+            return updatedItems;
+          });
           console.log("Deleted item from Supabase:", id);
         }
       } catch (err) {
@@ -274,7 +343,7 @@ export function useSupabaseWithFallback() {
         setError("Failed to delete item");
       }
     },
-    [items, usingFallback]
+    [items, usingFallback, saveToLocalStorage]
   );
 
   const clearAll = useCallback(async () => {
@@ -305,13 +374,14 @@ export function useSupabaseWithFallback() {
         }
 
         setItems([]);
+        saveToLocalStorage([]);
         console.log("Cleared all items from Supabase");
       }
     } catch (err) {
       console.error("Error clearing all items:", err);
       setError("Failed to clear all items");
     }
-  }, [usingFallback]);
+  }, [usingFallback, saveToLocalStorage]);
 
   return {
     items,

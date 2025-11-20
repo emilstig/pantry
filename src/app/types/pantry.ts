@@ -6,6 +6,8 @@ export interface PantryItem {
   unitUnit: "g" | "ml" | "mg"; // unit for unitQuantity
   expiry?: string; // ISO date string
   notes?: string;
+  reminderCount: number;
+  isReplaced: boolean;
   createdAt: string; // ISO date string
   updatedAt: string; // ISO date string
 }

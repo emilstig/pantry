@@ -7,6 +7,8 @@ CREATE TABLE pantry_items (
   unit_unit TEXT NOT NULL CHECK (unit_unit IN ('g', 'ml', 'mg')),
   expiry DATE,
   notes TEXT,
+  reminder_count INTEGER DEFAULT 0,
+  is_replaced BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

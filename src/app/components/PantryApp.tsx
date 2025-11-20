@@ -4,6 +4,8 @@ import { useSupabaseWithFallback } from "../hooks/useSupabaseWithFallback";
 import { PantryItemFormData } from "../types/pantry";
 import PantryForm from "./PantryForm";
 import PantryList from "./PantryList";
+import SettingsButton from "./SettingsButton";
+import SettingsPanel from "./SettingsPanel";
 import styles from "./PantryApp.module.scss";
 
 export default function PantryApp() {
@@ -52,6 +54,10 @@ export default function PantryApp() {
     }
   };
 
+  const handleToggleReplaced = (id: string, isReplaced: boolean) => {
+    updateItem(id, { isReplaced });
+  };
+
   // Show loading state while client-side hydration is happening
   if (!isClient || loading) {
     return (
@@ -81,16 +87,21 @@ export default function PantryApp() {
   return (
     <div className={styles.app}>
       <header className={styles.header}>
-        <h1 className={styles.title}>🍽️ Pantry Manager</h1>
-        <p className={styles.subtitle}>
-          Keep track of your pantry items and never let food go to waste
-        </p>
-        {usingFallback && (
-          <div className={styles.fallbackNotice}>
-            <span className={styles.fallbackIcon}>⚠️</span>
-            Using local storage (Supabase not configured)
+        <div className={styles.headerContent}>
+          <div className={styles.titleSection}>
+            <h1 className={styles.title}>🍽️ Pantry Manager</h1>
+            <p className={styles.subtitle}>
+              Keep track of your pantry items and never let food go to waste
+            </p>
+            {usingFallback && (
+              <div className={styles.fallbackNotice}>
+                <span className={styles.fallbackIcon}>⚠️</span>
+                Using local storage (Supabase not configured)
+              </div>
+            )}
           </div>
-        )}
+          <SettingsButton />
+        </div>
       </header>
 
       <main className={styles.main}>
@@ -100,8 +111,11 @@ export default function PantryApp() {
           onUpdateItem={handleUpdateItem}
           onDeleteItem={handleDeleteItem}
           onClearAll={handleClearAll}
+          onToggleReplaced={handleToggleReplaced}
         />
       </main>
+
+      <SettingsPanel />
     </div>
   );
 }

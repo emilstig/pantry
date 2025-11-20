@@ -5,8 +5,19 @@
 }
 
 .header {
-  text-align: center;
   margin-bottom: 40px;
+}
+
+.headerContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.titleSection {
+  flex: 1;
+  text-align: center;
 }
 
 .title {

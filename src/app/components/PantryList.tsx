@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { PantryItem } from "../types/pantry";
+import { useSettings } from "../contexts/SettingsContext";
+import { getExpiryStatus, getDaysUntilExpiry } from "../utils/expiryUtils";
 import styles from "./PantryList.module.scss";
 
 interface PantryListProps {
@@ -9,6 +11,7 @@ interface PantryListProps {
   onUpdateItem: (id: string, updates: Partial<PantryItem>) => void;
   onDeleteItem: (id: string) => void;
   onClearAll: () => void;
+  onToggleReplaced: (id: string, isReplaced: boolean) => void;
 }
 
 interface EditingItem {
@@ -21,8 +24,10 @@ export default function PantryList({
   onUpdateItem,
   onDeleteItem,
   onClearAll,
+  onToggleReplaced,
 }: PantryListProps) {
   const [editingItem, setEditingItem] = useState<EditingItem | null>(null);
+  const { settings } = useSettings();
 
   const startEditing = (item: PantryItem) => {
     setEditingItem({
@@ -103,22 +108,6 @@ export default function PantryList({
     });
   };
 
-  const getDaysUntilExpiry = (expiryDate: string) => {
-    const today = new Date();
-    const expiry = new Date(expiryDate);
-    const diffTime = expiry.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
-
-  const getExpiryStatus = (expiryDate: string) => {
-    const days = getDaysUntilExpiry(expiryDate);
-    if (days < 0) return "expired";
-    if (days <= 3) return "expiring-soon";
-    if (days <= 7) return "expiring-week";
-    return "good";
-  };
-
   const groupedItems = groupItemsByYear(items);
   const sortedYears = Object.keys(groupedItems).sort((a, b) => {
     if (a === "No date") return 1;
@@ -148,142 +137,193 @@ export default function PantryList({
         <div key={year} className={styles.yearGroup}>
           <h3 className={styles.yearTitle}>{year}</h3>
           <div className={styles.itemsList}>
-            {groupedItems[year].map(item => (
-              <div key={item.id} className={styles.item}>
-                {editingItem?.id === item.id ? (
-                  <div className={styles.editingItem}>
-                    <div className={styles.editingFields}>
-                      <input
-                        type="text"
-                        value={editingItem.data.name || ""}
-                        onChange={e =>
-                          updateEditingField("name", e.target.value)
-                        }
-                        className={styles.editInput}
-                        placeholder="Item name"
-                      />
-                      <div className={styles.editRow}>
+            {groupedItems[year].map(item => {
+              const daysUntilExpiry = item.expiry
+                ? getDaysUntilExpiry(item.expiry)
+                : null;
+              const isExpired =
+                typeof daysUntilExpiry === "number" && daysUntilExpiry < 0;
+              const itemClasses = [
+                styles.item,
+                !item.isReplaced ? styles.replacedItem : "",
+                isExpired ? styles.expiredItem : "",
+              ]
+                .filter(Boolean)
+                .join(" ");
+
+              return (
+                <div key={item.id} className={itemClasses}>
+                  {editingItem?.id === item.id ? (
+                    <div className={styles.editingItem}>
+                      <div className={styles.editingFields}>
                         <input
-                          type="number"
-                          min="0.1"
-                          step="0.1"
-                          value={editingItem.data.quantity || 0}
+                          type="text"
+                          value={editingItem.data.name || ""}
                           onChange={e =>
-                            updateEditingField(
-                              "quantity",
-                              parseFloat(e.target.value) || 0
-                            )
+                            updateEditingField("name", e.target.value)
                           }
                           className={styles.editInput}
-                          placeholder="Quantity"
+                          placeholder="Item name"
                         />
-                        <input
-                          type="number"
-                          min="0.1"
-                          step="0.1"
-                          value={editingItem.data.unitQuantity || 0}
-                          onChange={e =>
-                            updateEditingField(
-                              "unitQuantity",
-                              parseFloat(e.target.value) || 0
-                            )
-                          }
-                          className={styles.editInput}
-                          placeholder="Weight/volume per unit"
-                        />
-                        <select
-                          value={editingItem.data.unitUnit || "g"}
-                          onChange={e =>
-                            updateEditingField("unitUnit", e.target.value)
-                          }
-                          className={styles.editSelect}
-                        >
-                          <option value="g">g</option>
-                          <option value="ml">ml</option>
-                          <option value="mg">mg</option>
-                        </select>
-                        <input
-                          type="date"
-                          value={editingItem.data.expiry || ""}
-                          onChange={e =>
-                            updateEditingField("expiry", e.target.value)
-                          }
-                          className={styles.editInput}
-                        />
-                      </div>
-                      <textarea
-                        value={editingItem.data.notes || ""}
-                        onChange={e =>
-                          updateEditingField("notes", e.target.value)
-                        }
-                        className={styles.editTextarea}
-                        placeholder="Notes (optional)"
-                        rows={2}
-                      />
-                    </div>
-                    <div className={styles.editActions}>
-                      <button
-                        onClick={saveEditing}
-                        className={styles.saveButton}
-                      >
-                        Save
-                      </button>
-                      <button
-                        onClick={cancelEditing}
-                        className={styles.cancelButton}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className={styles.itemContent}>
-                    <div className={styles.itemInfo}>
-                      <div className={styles.itemHeader}>
-                        <h4 className={styles.itemName}>{item.name}</h4>
-                        <span className={styles.itemQuantity}>
-                          {item.quantity} × {item.unitQuantity}
-                          {item.unitUnit}
-                        </span>
-                      </div>
-                      {item.expiry && (
-                        <div className={styles.expiryInfo}>
-                          <span
-                            className={`${styles.expiryDate} ${styles[getExpiryStatus(item.expiry)]}`}
+                        <div className={styles.editRow}>
+                          <input
+                            type="number"
+                            min="0.1"
+                            step="0.1"
+                            value={editingItem.data.quantity || 0}
+                            onChange={e =>
+                              updateEditingField(
+                                "quantity",
+                                parseFloat(e.target.value) || 0
+                              )
+                            }
+                            className={styles.editInput}
+                            placeholder="Quantity"
+                          />
+                          <input
+                            type="number"
+                            min="0.1"
+                            step="0.1"
+                            value={editingItem.data.unitQuantity || 0}
+                            onChange={e =>
+                              updateEditingField(
+                                "unitQuantity",
+                                parseFloat(e.target.value) || 0
+                              )
+                            }
+                            className={styles.editInput}
+                            placeholder="Weight/volume per unit"
+                          />
+                          <select
+                            value={editingItem.data.unitUnit || "g"}
+                            onChange={e =>
+                              updateEditingField("unitUnit", e.target.value)
+                            }
+                            className={styles.editSelect}
                           >
-                            {formatDate(item.expiry)}
-                          </span>
-                          <span className={styles.daysUntil}>
-                            {getDaysUntilExpiry(item.expiry) < 0
-                              ? "Expired"
-                              : `${getDaysUntilExpiry(item.expiry)} days left`}
+                            <option value="g">g</option>
+                            <option value="ml">ml</option>
+                            <option value="mg">mg</option>
+                          </select>
+                          <input
+                            type="date"
+                            value={editingItem.data.expiry || ""}
+                            onChange={e =>
+                              updateEditingField("expiry", e.target.value)
+                            }
+                            className={styles.editInput}
+                          />
+                        </div>
+                        <textarea
+                          value={editingItem.data.notes || ""}
+                          onChange={e =>
+                            updateEditingField("notes", e.target.value)
+                          }
+                          className={styles.editTextarea}
+                          placeholder="Notes (optional)"
+                          rows={2}
+                        />
+                      </div>
+                      <div className={styles.editActions}>
+                        <button
+                          onClick={saveEditing}
+                          className={styles.saveButton}
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={cancelEditing}
+                          className={styles.cancelButton}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className={styles.itemContent}>
+                      <div className={styles.itemInfo}>
+                        <div className={styles.itemHeader}>
+                          <h4 className={styles.itemName}>{item.name}</h4>
+                          <span className={styles.itemQuantity}>
+                            {item.quantity} × {item.unitQuantity}
+                            {item.unitUnit}
                           </span>
                         </div>
-                      )}
-                      {item.notes && (
-                        <p className={styles.itemNotes}>{item.notes}</p>
-                      )}
+                        {item.isReplaced && item.expiry && (
+                          <div className={styles.expiryInfo}>
+                            <span
+                              className={`${styles.expiryDate} ${styles[getExpiryStatus(item.expiry, settings)]}`}
+                            >
+                              {formatDate(item.expiry)}
+                            </span>
+                            <span className={styles.daysUntil}>
+                              {getDaysUntilExpiry(item.expiry) < 0
+                                ? "Expired"
+                                : `${getDaysUntilExpiry(item.expiry)} days left`}
+                            </span>
+                          </div>
+                        )}
+                        {!item.isReplaced && (
+                          <div className={styles.replacedNotice}>
+                            <span role="img" aria-label="used">
+                              🍽️
+                            </span>{" "}
+                            Marked as used
+                          </div>
+                        )}
+                        {item.notes && (
+                          <p className={styles.itemNotes}>{item.notes}</p>
+                        )}
+                        {item.reminderCount > 0 && (
+                          <div className={styles.reminderInfo}>
+                            📧 Reminded {item.reminderCount} time
+                            {item.reminderCount > 1 ? "s" : ""}
+                          </div>
+                        )}
+                      </div>
+                      <div className={styles.itemActions}>
+                        <button
+                          onClick={() =>
+                            onToggleReplaced(item.id, !item.isReplaced)
+                          }
+                          className={
+                            item.isReplaced
+                              ? styles.usedButton
+                              : styles.replacedButton
+                          }
+                          title={
+                            item.isReplaced
+                              ? "Mark as used"
+                              : "Mark as replaced"
+                          }
+                          aria-label={
+                            item.isReplaced
+                              ? "Mark as used"
+                              : "Mark as replaced"
+                          }
+                        >
+                          {item.isReplaced ? "🍽️" : "♻️"}
+                        </button>
+                        <button
+                          onClick={() => startEditing(item)}
+                          className={styles.editButton}
+                          title="Edit item"
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          onClick={() => onDeleteItem(item.id)}
+                          className={styles.deleteButton}
+                          title="Delete item"
+                        >
+                          🗑️
+                        </button>
+                      </div>
                     </div>
-                    <div className={styles.itemActions}>
-                      <button
-                        onClick={() => startEditing(item)}
-                        className={styles.editButton}
-                        title="Edit item"
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        onClick={() => onDeleteItem(item.id)}
-                        className={styles.deleteButton}
-                        title="Delete item"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       ))}
