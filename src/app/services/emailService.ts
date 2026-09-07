@@ -9,8 +9,29 @@ function getResendClient() {
   return new Resend(apiKey);
 }
 
+/** Accepts app-shaped items or raw Supabase rows (snake_case). */
+type ReminderItemInput = PantryItem | Record<string, unknown>;
+
+function normalizeReminderItem(item: ReminderItemInput): PantryItem {
+  const row = item as Record<string, unknown>;
+
+  return {
+    id: String(row.id ?? ""),
+    name: String(row.name ?? ""),
+    quantity: Number(row.quantity ?? 0),
+    unitQuantity: Number(row.unitQuantity ?? row.unit_quantity ?? 0),
+    unitUnit: (row.unitUnit ?? row.unit_unit ?? "g") as PantryItem["unitUnit"],
+    expiry: (row.expiry as string | undefined) ?? undefined,
+    notes: (row.notes as string | undefined) ?? undefined,
+    reminderCount: Number(row.reminderCount ?? row.reminder_count ?? 0),
+    isReplaced: Boolean(row.isReplaced ?? row.is_replaced ?? false),
+    createdAt: String(row.createdAt ?? row.created_at ?? ""),
+    updatedAt: String(row.updatedAt ?? row.updated_at ?? ""),
+  };
+}
+
 export interface ReminderEmailData {
-  items: PantryItem[];
+  items: ReminderItemInput[];
   recipientEmail: string;
 }
 
@@ -23,12 +44,13 @@ export async function sendReminderEmail({
     const from =
       process.env.REMINDER_FROM_EMAIL ||
       "Pantry Manager <onboarding@resend.dev>";
+    const normalizedItems = items.map(normalizeReminderItem);
 
     const { data, error } = await resend.emails.send({
       from,
       to: [recipientEmail],
-      subject: `Pantry Reminder: ${items.length} items need attention`,
-      html: generateReminderEmailHTML(items),
+      subject: `Pantry Reminder: ${normalizedItems.length} items need attention`,
+      html: generateReminderEmailHTML(normalizedItems),
     });
 
     if (error) {
@@ -46,8 +68,10 @@ export async function sendReminderEmail({
 
 function generateReminderEmailHTML(items: PantryItem[]): string {
   const today = new Date();
+  const appUrl = process.env.APP_URL?.replace(/\/$/, "");
+
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
+    return new Date(dateString).toLocaleDateString("sv-SE", {
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -61,10 +85,10 @@ function generateReminderEmailHTML(items: PantryItem[]): string {
   };
 
   const getStatusColor = (days: number) => {
-    if (days < 0) return "#dc2626"; // Red for expired
-    if (days <= 7) return "#dc2626"; // Red for urgent
-    if (days <= 30) return "#d97706"; // Orange for warning
-    return "#16a34a"; // Green for good
+    if (days < 0) return "#dc2626";
+    if (days <= 7) return "#dc2626";
+    if (days <= 30) return "#d97706";
+    return "#16a34a";
   };
 
   const getStatusText = (days: number) => {
@@ -73,6 +97,17 @@ function generateReminderEmailHTML(items: PantryItem[]): string {
     if (days <= 30) return "SOON";
     return "GOOD";
   };
+
+  const ctaBlock = appUrl
+    ? `
+      <div style="text-align: center; margin: 24px 0 8px 0;">
+        <a href="${appUrl}"
+           style="display: inline-block; background: #2563eb; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-size: 15px; font-weight: bold;">
+          Open Pantry Manager
+        </a>
+      </div>
+    `
+    : "";
 
   return `
     <!DOCTYPE html>
@@ -101,12 +136,18 @@ function generateReminderEmailHTML(items: PantryItem[]): string {
 
             return `
             <div style="border: 1px solid #e5e7eb; border-radius: 6px; padding: 15px; margin-bottom: 12px; background: #fafafa;">
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-                <h3 style="margin: 0; color: #1f2937; font-size: 16px;">${item.name}</h3>
-                <span style="background: ${statusColor}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">
-                  ${statusText}
-                </span>
-              </div>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 8px;">
+                <tr>
+                  <td align="left" valign="top" style="padding-right: 12px;">
+                    <h3 style="margin: 0; color: #1f2937; font-size: 16px;">${item.name}</h3>
+                  </td>
+                  <td align="right" valign="top" width="1%" style="white-space: nowrap;">
+                    <span style="background: ${statusColor}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">
+                      ${statusText}
+                    </span>
+                  </td>
+                </tr>
+              </table>
               <div style="color: #6b7280; font-size: 14px; margin-bottom: 4px;">
                 Quantity: ${item.quantity} × ${item.unitQuantity}${item.unitUnit}
               </div>
@@ -150,9 +191,11 @@ function generateReminderEmailHTML(items: PantryItem[]): string {
           .join("")}
       </div>
 
+      ${ctaBlock}
+
       <div style="background: #f8fafc; border-radius: 8px; padding: 20px; margin-top: 20px; text-align: center;">
         <p style="margin: 0; color: #64748b; font-size: 14px;">
-          💡 <strong>Tip:</strong> Check your pantry app to mark items as replaced or update their status.
+          💡 <strong>Tip:</strong> Open the app to mark items as replaced or update their status.
         </p>
         <p style="margin: 10px 0 0 0; color: #64748b; font-size: 12px;">
           This reminder was sent automatically by your Pantry Manager.
