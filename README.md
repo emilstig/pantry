@@ -50,6 +50,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | `RESEND_API_KEY` | For emails | From [Resend](https://resend.com) |
 | `REMINDER_EMAIL` | For emails | Where reminders are sent |
 | `REMINDER_FROM_EMAIL` | Optional | Verified sender; defaults to Resend onboarding address |
+| `APP_URL` | Optional | Public app URL for the “Open Pantry Manager” button in emails |
 
 3. Deploy. Cron jobs are defined in `vercel.json`:
    - **`/api/keepalive`** – daily at 04:00 UTC (keeps Supabase awake)
