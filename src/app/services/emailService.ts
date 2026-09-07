@@ -1,19 +1,33 @@
 import { Resend } from "resend";
 import { PantryItem } from "../types/pantry";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResendClient() {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    throw new Error("RESEND_API_KEY is not configured");
+  }
+  return new Resend(apiKey);
+}
 
 export interface ReminderEmailData {
   items: PantryItem[];
   recipientEmail: string;
 }
 
-export async function sendReminderEmail({ items, recipientEmail }: ReminderEmailData) {
+export async function sendReminderEmail({
+  items,
+  recipientEmail,
+}: ReminderEmailData) {
   try {
+    const resend = getResendClient();
+    const from =
+      process.env.REMINDER_FROM_EMAIL ||
+      "Pantry Manager <onboarding@resend.dev>";
+
     const { data, error } = await resend.emails.send({
-      from: "Pantry Manager <noreply@yourdomain.com>", // Replace with your domain
+      from,
       to: [recipientEmail],
-      subject: `🛒 Pantry Reminder: ${items.length} items need attention`,
+      subject: `Pantry Reminder: ${items.length} items need attention`,
       html: generateReminderEmailHTML(items),
     });
 
@@ -79,12 +93,13 @@ function generateReminderEmailHTML(items: PantryItem[]): string {
       <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
         <h2 style="color: #374151; margin: 0 0 20px 0; font-size: 18px;">Items to Check:</h2>
         
-        ${items.map(item => {
-          const days = item.expiry ? getDaysUntilExpiry(item.expiry) : 0;
-          const statusColor = getStatusColor(days);
-          const statusText = getStatusText(days);
-          
-          return `
+        ${items
+          .map(item => {
+            const days = item.expiry ? getDaysUntilExpiry(item.expiry) : 0;
+            const statusColor = getStatusColor(days);
+            const statusText = getStatusText(days);
+
+            return `
             <div style="border: 1px solid #e5e7eb; border-radius: 6px; padding: 15px; margin-bottom: 12px; background: #fafafa;">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
                 <h3 style="margin: 0; color: #1f2937; font-size: 16px;">${item.name}</h3>
@@ -95,27 +110,44 @@ function generateReminderEmailHTML(items: PantryItem[]): string {
               <div style="color: #6b7280; font-size: 14px; margin-bottom: 4px;">
                 Quantity: ${item.quantity} × ${item.unitQuantity}${item.unitUnit}
               </div>
-              ${item.expiry ? `
+              ${
+                item.expiry
+                  ? `
                 <div style="color: #6b7280; font-size: 14px;">
                   Expires: ${formatDate(item.expiry)} 
-                  ${days < 0 ? `(${Math.abs(days)} days overdue)` : 
-                    days === 0 ? '(Today)' : 
-                    `(${days} days left)`}
+                  ${
+                    days < 0
+                      ? `(${Math.abs(days)} days overdue)`
+                      : days === 0
+                        ? "(Today)"
+                        : `(${days} days left)`
+                  }
                 </div>
-              ` : ''}
-              ${item.notes ? `
+              `
+                  : ""
+              }
+              ${
+                item.notes
+                  ? `
                 <div style="color: #6b7280; font-size: 14px; font-style: italic; margin-top: 4px;">
                   Note: ${item.notes}
                 </div>
-              ` : ''}
-              ${item.reminderCount > 0 ? `
+              `
+                  : ""
+              }
+              ${
+                item.reminderCount > 0
+                  ? `
                 <div style="color: #d97706; font-size: 12px; margin-top: 4px;">
-                  📧 Reminded ${item.reminderCount} time${item.reminderCount > 1 ? 's' : ''}
+                  📧 Reminded ${item.reminderCount} time${item.reminderCount > 1 ? "s" : ""}
                 </div>
-              ` : ''}
+              `
+                  : ""
+              }
             </div>
           `;
-        }).join('')}
+          })
+          .join("")}
       </div>
 
       <div style="background: #f8fafc; border-radius: 8px; padding: 20px; margin-top: 20px; text-align: center;">

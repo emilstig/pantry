@@ -1,15 +1,22 @@
-# Weekly Reminder Setup Guide
+# Cron Jobs Setup Guide
 
 ## Overview
-This guide explains how to set up weekly email reminders for your pantry items using Resend and a cron job.
+Vercel Cron drives two endpoints (see `vercel.json`):
+
+| Path | Schedule | Purpose |
+| --- | --- | --- |
+| `/api/keepalive` | `0 4 * * *` (daily 04:00 UTC) | Light Supabase query so free-tier projects do not pause |
+| `/api/reminder` | `0 9 * * 1` (Mondays 09:00 UTC) | Weekly expiry emails via Resend |
+
+Both routes require `Authorization: Bearer <CRON_SECRET>` in production. Vercel Cron sends this header automatically when `CRON_SECRET` is set in the project env.
 
 ## Prerequisites
-1. Resend account and API key
+1. Resend account and API key (for reminders)
 2. Supabase project with updated schema
-3. Environment variables configured
+3. Environment variables configured on Vercel
 
 ## Environment Variables
-Add these to your `.env.local` file:
+Add these in Vercel → Settings → Environment Variables (and locally in `.env.local`):
 
 ```env
 # Resend Configuration
@@ -17,10 +24,14 @@ RESEND_API_KEY=your_resend_api_key
 
 # Email Configuration
 REMINDER_EMAIL=your-email@example.com
+REMINDER_FROM_EMAIL=Pantry Manager <onboarding@resend.dev>
 
-# Supabase Configuration (already set)
+# Supabase Configuration
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_key
+
+# Cron auth (required in production)
+CRON_SECRET=generate_with_openssl_rand_hex_32
 ```
 
 ## Database Schema Update
@@ -30,55 +41,24 @@ Run the updated SQL schema in your Supabase SQL Editor to add the new fields:
 
 ## Cron Job Setup
 
-### Option 1: Vercel Cron Jobs (Recommended)
-1. Go to your Vercel project dashboard
-2. Navigate to Functions → Cron Jobs
-3. Create a new cron job with:
-   - **Name**: `pantry-reminder`
-   - **Schedule**: `0 9 * * 1` (Every Monday at 9 AM)
-   - **Endpoint**: `/api/reminder`
+Cron schedules are declared in `vercel.json` and applied on deploy. On the Vercel Hobby plan you can have up to two daily jobs, which matches this project.
 
-### Option 2: External Cron Service
-Use a service like:
-- **cron-job.org**: Free cron service
-- **EasyCron**: More advanced features
-- **GitHub Actions**: If using GitHub
-
-#### Example GitHub Actions Workflow:
-```yaml
-name: Weekly Pantry Reminder
-on:
-  schedule:
-    - cron: '0 9 * * 1'  # Every Monday at 9 AM UTC
-  workflow_dispatch:  # Manual trigger
-
-jobs:
-  send-reminder:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Send Reminder
-        run: |
-          curl -X POST https://your-domain.com/api/reminder
-```
-
-### Option 3: Local Cron (Development)
-Add to your crontab:
+### Manual test
 ```bash
-# Edit crontab
-crontab -e
-
-# Add this line (replace with your domain)
-0 9 * * 1 curl -X POST https://your-domain.com/api/reminder
+curl -H "Authorization: Bearer $CRON_SECRET" https://your-domain.com/api/keepalive
+curl -H "Authorization: Bearer $CRON_SECRET" https://your-domain.com/api/reminder
 ```
 
-## Testing the Reminder
-
-### Manual Test
-```bash
-curl -X POST https://your-domain.com/api/reminder
+### Expected keepalive response
+```json
+{
+  "ok": true,
+  "timestamp": "2026-09-07T04:00:00.000Z",
+  "itemCount": 12
+}
 ```
 
-### Expected Response
+### Expected reminder response
 ```json
 {
   "success": true,
@@ -96,22 +76,25 @@ curl -X POST https://your-domain.com/api/reminder
 ## Troubleshooting
 
 ### Common Issues
-1. **Email not sending**: Check RESEND_API_KEY and REMINDER_EMAIL
-2. **No items found**: Ensure items have expiry dates and aren't marked as replaced
-3. **Database errors**: Verify Supabase connection and schema
+1. **401 Unauthorized**: Missing or wrong `CRON_SECRET`
+2. **Email not sending**: Check `RESEND_API_KEY`, `REMINDER_EMAIL`, and verified `REMINDER_FROM_EMAIL`
+3. **No items found**: Ensure items have expiry dates and aren't marked as replaced
+4. **Database errors**: Verify Supabase connection and schema
+5. **Supabase paused**: Confirm `/api/keepalive` runs daily in Vercel Cron Jobs
 
 ### Logs
 Check your deployment logs for:
+- Keepalive success / DB ping failures
 - "Starting weekly reminder check..."
 - "Reminder sent for X items"
-- Any error messages
 
 ## Customization
 
 ### Change Reminder Frequency
-- **Daily**: `0 9 * * *` (Every day at 9 AM)
-- **Weekly**: `0 9 * * 1` (Every Monday at 9 AM)
-- **Bi-weekly**: `0 9 1,15 * *` (1st and 15th of each month)
+Edit `vercel.json` schedules (Hobby: once per day max per job):
+- **Daily**: `0 9 * * *`
+- **Weekly**: `0 9 * * 1`
+- **Bi-weekly**: `0 9 1,15 * *`
 
 ### Modify Warning Thresholds
 Update the `DEFAULT_SETTINGS` in `/api/reminder/route.ts`:
@@ -129,7 +112,7 @@ Edit the email template in `/services/emailService.ts` to:
 - Modify the content and layout
 
 ## Security Notes
-- The reminder endpoint is public - consider adding authentication
+- Cron endpoints require `CRON_SECRET` in production
 - Use environment variables for sensitive data
 - Monitor your Resend usage to avoid rate limits
 

@@ -20,14 +20,19 @@ export function useSupabase() {
     try {
       setLoading(true);
       console.log("Attempting to load items from Supabase...");
-      
+
       // Check if Supabase is properly configured
-      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      if (
+        !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+        !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      ) {
         console.error("Supabase environment variables not configured");
-        setError("Supabase not configured. Please check your environment variables.");
+        setError(
+          "Supabase not configured. Please check your environment variables."
+        );
         return;
       }
-      
+
       const { data, error } = await supabase
         .from("pantry_items")
         .select("*")
@@ -38,7 +43,7 @@ export function useSupabase() {
           message: error.message,
           details: error.details,
           hint: error.hint,
-          code: error.code
+          code: error.code,
         });
         setError(`Database error: ${error.message}`);
         return;
@@ -48,103 +53,120 @@ export function useSupabase() {
       setItems(data || []);
     } catch (err) {
       console.error("Unexpected error loading items:", err);
-      setError(`Unexpected error: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setError(
+        `Unexpected error: ${err instanceof Error ? err.message : "Unknown error"}`
+      );
     } finally {
       setLoading(false);
     }
-  }
   };
 
-  const addItem = useCallback(async (itemData: Omit<PantryItem, "id" | "createdAt" | "updatedAt">) => {
-    try {
-      setError(null);
-      const { data, error } = await supabase
-        .from("pantry_items")
-        .insert([
-          {
-            name: itemData.name,
-            quantity: itemData.quantity,
-            unit_quantity: itemData.unitQuantity,
-            unit_unit: itemData.unitUnit,
-            expiry: itemData.expiry,
-            notes: itemData.notes,
-          },
-        ])
-        .select()
-        .single();
+  const addItem = useCallback(
+    async (itemData: Omit<PantryItem, "id" | "createdAt" | "updatedAt">) => {
+      try {
+        setError(null);
+        const { data, error } = await supabase
+          .from("pantry_items")
+          .insert([
+            {
+              name: itemData.name,
+              quantity: itemData.quantity,
+              unit_quantity: itemData.unitQuantity,
+              unit_unit: itemData.unitUnit,
+              expiry: itemData.expiry,
+              notes: itemData.notes,
+            },
+          ])
+          .select()
+          .single();
 
-      if (error) {
-        console.error("Error adding item:", error);
+        if (error) {
+          console.error("Error adding item:", error);
+          setError("Failed to add item");
+          return;
+        }
+
+        // Convert database format to our interface format
+        const newItem: PantryItem = {
+          id: data.id,
+          name: data.name,
+          quantity: data.quantity,
+          unitQuantity: data.unit_quantity,
+          unitUnit: data.unit_unit,
+          expiry: data.expiry,
+          notes: data.notes,
+          reminderCount: data.reminder_count ?? 0,
+          isReplaced: data.is_replaced ?? false,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        };
+
+        setItems(prev => [newItem, ...prev]);
+      } catch (err) {
+        console.error("Error adding item:", err);
         setError("Failed to add item");
-        return;
       }
+    },
+    []
+  );
 
-      // Convert database format to our interface format
-      const newItem: PantryItem = {
-        id: data.id,
-        name: data.name,
-        quantity: data.quantity,
-        unitQuantity: data.unit_quantity,
-        unitUnit: data.unit_unit,
-        expiry: data.expiry,
-        notes: data.notes,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-      };
+  const updateItem = useCallback(
+    async (id: string, updates: Partial<PantryItem>) => {
+      try {
+        setError(null);
+        const updateData: Record<
+          string,
+          string | number | boolean | null | undefined
+        > = {};
 
-      setItems(prev => [newItem, ...prev]);
-    } catch (err) {
-      console.error("Error adding item:", err);
-      setError("Failed to add item");
-    }
-  }, []);
+        if (updates.name !== undefined) updateData.name = updates.name;
+        if (updates.quantity !== undefined)
+          updateData.quantity = updates.quantity;
+        if (updates.unitQuantity !== undefined)
+          updateData.unit_quantity = updates.unitQuantity;
+        if (updates.unitUnit !== undefined)
+          updateData.unit_unit = updates.unitUnit;
+        if (updates.expiry !== undefined) updateData.expiry = updates.expiry;
+        if (updates.notes !== undefined) updateData.notes = updates.notes;
 
-  const updateItem = useCallback(async (id: string, updates: Partial<PantryItem>) => {
-    try {
-      setError(null);
-      const updateData: any = {};
-      
-      if (updates.name !== undefined) updateData.name = updates.name;
-      if (updates.quantity !== undefined) updateData.quantity = updates.quantity;
-      if (updates.unitQuantity !== undefined) updateData.unit_quantity = updates.unitQuantity;
-      if (updates.unitUnit !== undefined) updateData.unit_unit = updates.unitUnit;
-      if (updates.expiry !== undefined) updateData.expiry = updates.expiry;
-      if (updates.notes !== undefined) updateData.notes = updates.notes;
+        const { data, error } = await supabase
+          .from("pantry_items")
+          .update(updateData)
+          .eq("id", id)
+          .select()
+          .single();
 
-      const { data, error } = await supabase
-        .from("pantry_items")
-        .update(updateData)
-        .eq("id", id)
-        .select()
-        .single();
+        if (error) {
+          console.error("Error updating item:", error);
+          setError("Failed to update item");
+          return;
+        }
 
-      if (error) {
-        console.error("Error updating item:", error);
+        // Convert database format to our interface format
+        const updatedItem: PantryItem = {
+          id: data.id,
+          name: data.name,
+          quantity: data.quantity,
+          unitQuantity: data.unit_quantity,
+          unitUnit: data.unit_unit,
+          expiry: data.expiry,
+          notes: data.notes,
+          reminderCount: data.reminder_count ?? 0,
+          isReplaced: data.is_replaced ?? false,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        };
+
+        setItems(prev =>
+          prev.map(item => (item.id === id ? updatedItem : item))
+        );
+      } catch (err) {
+        console.error("Error updating item:", err);
         setError("Failed to update item");
-        return;
       }
-
-      // Convert database format to our interface format
-      const updatedItem: PantryItem = {
-        id: data.id,
-        name: data.name,
-        quantity: data.quantity,
-        unitQuantity: data.unit_quantity,
-        unitUnit: data.unit_unit,
-        expiry: data.expiry,
-        notes: data.notes,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-      };
-
-      setItems(prev => prev.map(item => 
-        item.id === id ? updatedItem : item
-      ));
-    } catch (err) {
-      console.error("Error updating item:", err);
-      setError("Failed to update item");
-    }
-  }, []);
+    },
+    []
+  );
 
   const deleteItem = useCallback(async (id: string) => {
     try {

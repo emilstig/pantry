@@ -2,6 +2,9 @@
   "name": "pantry",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22.20.0"
+  },
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
@@ -12,6 +15,7 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
+    "@react-email/render": "^2.1.0",
     "@supabase/supabase-js": "^2.58.0",
     "next": "15.5.4",
     "react": "19.1.0",
