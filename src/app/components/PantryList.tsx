@@ -228,9 +228,7 @@ export default function PantryList({
               {item.expiry && typeof daysUntilExpiry === "number" && (
                 <div
                   className={`${styles.expiryInfo} ${
-                    daysUntilExpiry < 0
-                      ? styles.expiryOverdue
-                      : styles.expiryOk
+                    daysUntilExpiry < 0 ? styles.expiryOverdue : styles.expiryOk
                   }`}
                 >
                   Expires: {formatDate(item.expiry)}{" "}
