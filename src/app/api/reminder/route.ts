@@ -2,22 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { assertCronAuthorized } from "../../lib/cronAuth";
 import { supabase } from "../../lib/supabase";
 import { sendReminderEmail } from "../../services/emailService";
-import { getExpiryStatus } from "../../utils/expiryUtils";
-
-// Default settings for reminder check
-const DEFAULT_SETTINGS = {
-  expiringSoonDays: 90,
-  replaceDays: 30,
-};
+import { getDaysUntilExpiry } from "../../utils/expiryUtils";
 
 async function runReminderCheck() {
   console.log("Starting weekly reminder check...");
 
+  // Same set as "Replace now" in the app: marked as used, or past expiry.
   const { data: items, error } = await supabase
     .from("pantry_items")
-    .select("*")
-    .eq("is_replaced", false)
-    .not("expiry", "is", null);
+    .select("*");
 
   if (error) {
     console.error("Error fetching items:", error);
@@ -32,14 +25,13 @@ async function runReminderCheck() {
     return NextResponse.json({ message: "No items to check" });
   }
 
-  const itemsNeedingReplacement = items.filter(item => {
-    if (!item.expiry) return false;
-
-    const status = getExpiryStatus(item.expiry, DEFAULT_SETTINGS);
-    return status === "replace" || status === "expired";
+  const itemsNeedingAttention = items.filter(item => {
+    const markedAsUsed = item.is_replaced === false;
+    const expired = !!item.expiry && getDaysUntilExpiry(item.expiry) < 0;
+    return markedAsUsed || expired;
   });
 
-  if (itemsNeedingReplacement.length === 0) {
+  if (itemsNeedingAttention.length === 0) {
     console.log("No items need replacement reminders");
     return NextResponse.json({ message: "No items need replacement" });
   }
@@ -55,7 +47,7 @@ async function runReminderCheck() {
   }
 
   const emailResult = await sendReminderEmail({
-    items: itemsNeedingReplacement,
+    items: itemsNeedingAttention,
     recipientEmail,
   });
 
@@ -67,7 +59,7 @@ async function runReminderCheck() {
     );
   }
 
-  const updatePromises = itemsNeedingReplacement.map(item =>
+  const updatePromises = itemsNeedingAttention.map(item =>
     supabase
       .from("pantry_items")
       .update({
@@ -84,11 +76,11 @@ async function runReminderCheck() {
     console.error("Some reminder count updates failed:", updateErrors);
   }
 
-  console.log(`Reminder sent for ${itemsNeedingReplacement.length} items`);
+  console.log(`Reminder sent for ${itemsNeedingAttention.length} items`);
 
   return NextResponse.json({
     success: true,
-    itemsReminded: itemsNeedingReplacement.length,
+    itemsReminded: itemsNeedingAttention.length,
     message: "Reminder email sent successfully",
   });
 }

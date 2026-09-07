@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { PantryItem } from "../types/pantry";
+import { getDaysUntilExpiry } from "../utils/expiryUtils";
 
 function getResendClient() {
   const apiKey = process.env.RESEND_API_KEY;
@@ -66,37 +67,121 @@ export async function sendReminderEmail({
   }
 }
 
-function generateReminderEmailHTML(items: PantryItem[]): string {
-  const today = new Date();
-  const appUrl = process.env.APP_URL?.replace(/\/$/, "");
+function sortByExpiryAsc(a: PantryItem, b: PantryItem) {
+  if (!a.expiry && !b.expiry) return 0;
+  if (!a.expiry) return 1;
+  if (!b.expiry) return -1;
+  return new Date(a.expiry).getTime() - new Date(b.expiry).getTime();
+}
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("sv-SE", {
+function renderItemCard(item: PantryItem): string {
+  const days = item.expiry ? getDaysUntilExpiry(item.expiry) : null;
+  const markedAsUsed = !item.isReplaced;
+
+  let statusColor = "#2563eb";
+  let statusText = "USED";
+
+  if (days !== null && days < 0) {
+    statusColor = "#dc2626";
+    statusText = "EXPIRED";
+  } else if (markedAsUsed) {
+    statusColor = "#7c3aed";
+    statusText = "USED";
+  } else if (days !== null && days <= 7) {
+    statusColor = "#dc2626";
+    statusText = "URGENT";
+  } else if (days !== null && days <= 30) {
+    statusColor = "#d97706";
+    statusText = "SOON";
+  }
+
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString("sv-SE", {
       month: "short",
       day: "numeric",
       year: "numeric",
     });
-  };
 
-  const getDaysUntilExpiry = (expiryDate: string) => {
-    const expiry = new Date(expiryDate);
-    const diffTime = expiry.getTime() - today.getTime();
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  };
+  return `
+    <div style="border: 1px solid #e5e7eb; border-radius: 6px; padding: 15px; margin-bottom: 12px; background: #fafafa;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 8px;">
+        <tr>
+          <td align="left" valign="top" style="padding-right: 12px;">
+            <h3 style="margin: 0; color: #1f2937; font-size: 16px;">${item.name}</h3>
+          </td>
+          <td align="right" valign="top" width="1%" style="white-space: nowrap;">
+            <span style="background: ${statusColor}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">
+              ${statusText}
+            </span>
+          </td>
+        </tr>
+      </table>
+      <div style="color: #6b7280; font-size: 14px; margin-bottom: 4px;">
+        Quantity: ${item.quantity} × ${item.unitQuantity}${item.unitUnit}
+      </div>
+      ${
+        item.expiry && days !== null
+          ? `
+        <div style="color: #6b7280; font-size: 14px;">
+          Expires: ${formatDate(item.expiry)}
+          ${
+            days < 0
+              ? `(${Math.abs(days)} days overdue)`
+              : days === 0
+                ? "(Today)"
+                : `(${days} days left)`
+          }
+        </div>
+      `
+          : `<div style="color: #6b7280; font-size: 14px;">No expiry date</div>`
+      }
+      ${
+        item.notes
+          ? `
+        <div style="color: #6b7280; font-size: 14px; font-style: italic; margin-top: 4px;">
+          Note: ${item.notes}
+        </div>
+      `
+          : ""
+      }
+      ${
+        item.reminderCount > 0
+          ? `
+        <div style="color: #d97706; font-size: 12px; margin-top: 4px;">
+          📧 Reminded ${item.reminderCount} time${item.reminderCount > 1 ? "s" : ""}
+        </div>
+      `
+          : ""
+      }
+    </div>
+  `;
+}
 
-  const getStatusColor = (days: number) => {
-    if (days < 0) return "#dc2626";
-    if (days <= 7) return "#dc2626";
-    if (days <= 30) return "#d97706";
-    return "#16a34a";
-  };
+function renderSection(title: string, subtitle: string, items: PantryItem[]) {
+  if (items.length === 0) return "";
 
-  const getStatusText = (days: number) => {
-    if (days < 0) return "EXPIRED";
-    if (days <= 7) return "URGENT";
-    if (days <= 30) return "SOON";
-    return "GOOD";
-  };
+  return `
+    <div style="margin-bottom: 28px;">
+      <h2 style="color: #374151; margin: 0 0 4px 0; font-size: 18px;">${title}</h2>
+      <p style="color: #6b7280; margin: 0 0 16px 0; font-size: 13px;">${subtitle}</p>
+      ${items.map(renderItemCard).join("")}
+    </div>
+  `;
+}
+
+function generateReminderEmailHTML(items: PantryItem[]): string {
+  const appUrl = process.env.APP_URL?.replace(/\/$/, "");
+
+  // Match app "Replace now" groups: used items first, then expired still in stock.
+  const markedAsUsed = items
+    .filter(item => !item.isReplaced)
+    .sort(sortByExpiryAsc);
+  const expiredInStock = items
+    .filter(item => {
+      if (!item.isReplaced || !item.expiry) return false;
+      return getDaysUntilExpiry(item.expiry) < 0;
+    })
+    .sort(sortByExpiryAsc);
 
   const ctaBlock = appUrl
     ? `
@@ -126,69 +211,16 @@ function generateReminderEmailHTML(items: PantryItem[]): string {
       </div>
 
       <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <h2 style="color: #374151; margin: 0 0 20px 0; font-size: 18px;">Items to Check:</h2>
-        
-        ${items
-          .map(item => {
-            const days = item.expiry ? getDaysUntilExpiry(item.expiry) : 0;
-            const statusColor = getStatusColor(days);
-            const statusText = getStatusText(days);
-
-            return `
-            <div style="border: 1px solid #e5e7eb; border-radius: 6px; padding: 15px; margin-bottom: 12px; background: #fafafa;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 8px;">
-                <tr>
-                  <td align="left" valign="top" style="padding-right: 12px;">
-                    <h3 style="margin: 0; color: #1f2937; font-size: 16px;">${item.name}</h3>
-                  </td>
-                  <td align="right" valign="top" width="1%" style="white-space: nowrap;">
-                    <span style="background: ${statusColor}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">
-                      ${statusText}
-                    </span>
-                  </td>
-                </tr>
-              </table>
-              <div style="color: #6b7280; font-size: 14px; margin-bottom: 4px;">
-                Quantity: ${item.quantity} × ${item.unitQuantity}${item.unitUnit}
-              </div>
-              ${
-                item.expiry
-                  ? `
-                <div style="color: #6b7280; font-size: 14px;">
-                  Expires: ${formatDate(item.expiry)} 
-                  ${
-                    days < 0
-                      ? `(${Math.abs(days)} days overdue)`
-                      : days === 0
-                        ? "(Today)"
-                        : `(${days} days left)`
-                  }
-                </div>
-              `
-                  : ""
-              }
-              ${
-                item.notes
-                  ? `
-                <div style="color: #6b7280; font-size: 14px; font-style: italic; margin-top: 4px;">
-                  Note: ${item.notes}
-                </div>
-              `
-                  : ""
-              }
-              ${
-                item.reminderCount > 0
-                  ? `
-                <div style="color: #d97706; font-size: 12px; margin-top: 4px;">
-                  📧 Reminded ${item.reminderCount} time${item.reminderCount > 1 ? "s" : ""}
-                </div>
-              `
-                  : ""
-              }
-            </div>
-          `;
-          })
-          .join("")}
+        ${renderSection(
+          "Marked as used",
+          "Restock these — they've been used up.",
+          markedAsUsed
+        )}
+        ${renderSection(
+          "Expired",
+          "Still in the pantry but past their date.",
+          expiredInStock
+        )}
       </div>
 
       ${ctaBlock}
