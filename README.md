@@ -42,15 +42,15 @@ Open [http://localhost:3000](http://localhost:3000).
 1. Push the repo and import the project in [Vercel](https://vercel.com/new).
 2. Set these **Environment Variables** (Production):
 
-| Variable | Required | Notes |
-| --- | --- | --- |
-| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Project URL from Supabase |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Anon/public key |
-| `CRON_SECRET` | Yes | `openssl rand -hex 32` – secures cron routes |
-| `RESEND_API_KEY` | For emails | From [Resend](https://resend.com) |
-| `REMINDER_EMAIL` | For emails | Where reminders are sent |
-| `REMINDER_FROM_EMAIL` | Optional | Verified sender; defaults to Resend onboarding address |
-| `APP_URL` | Optional | Public app URL for the “Open Pantry Manager” button in emails |
+| Variable                        | Required   | Notes                                                         |
+| ------------------------------- | ---------- | ------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Yes        | Project URL from Supabase                                     |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes        | Anon/public key                                               |
+| `CRON_SECRET`                   | Yes        | `openssl rand -hex 32` – secures cron routes                  |
+| `RESEND_API_KEY`                | For emails | From [Resend](https://resend.com)                             |
+| `REMINDER_EMAIL`                | For emails | Where reminders are sent                                      |
+| `REMINDER_FROM_EMAIL`           | Optional   | Verified sender; defaults to Resend onboarding address        |
+| `APP_URL`                       | Optional   | Public app URL for the “Open Pantry Manager” button in emails |
 
 3. Deploy. Cron jobs are defined in `vercel.json`:
    - **`/api/keepalive`** – daily at 04:00 UTC (keeps Supabase awake)
@@ -69,3 +69,5 @@ curl -H "Authorization: Bearer $CRON_SECRET" https://YOUR_DOMAIN/api/reminder
 
 - [SUPABASE_SETUP.md](./SUPABASE_SETUP.md) – schema & Supabase setup
 - [CRON_SETUP.md](./CRON_SETUP.md) – reminder email details
+
+## Test
