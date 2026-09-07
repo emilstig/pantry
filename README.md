@@ -53,7 +53,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 3. Deploy. Cron jobs are defined in `vercel.json`:
    - **`/api/keepalive`** – daily at 04:00 UTC (keeps Supabase awake)
-   - **`/api/reminder`** – Mondays at 09:00 UTC (expiry emails)
+   - **`/api/reminder`** – Mondays 07:00 UTC (~09 Swedish time: 09 winter / 08 summer)
 
 4. After deploy, confirm under **Project → Settings → Cron Jobs** that both jobs appear.
 

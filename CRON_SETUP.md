@@ -6,7 +6,7 @@ Vercel Cron drives two endpoints (see `vercel.json`):
 | Path | Schedule | Purpose |
 | --- | --- | --- |
 | `/api/keepalive` | `0 4 * * *` (daily 04:00 UTC) | Light Supabase query so free-tier projects do not pause |
-| `/api/reminder` | `0 9 * * 1` (Mondays 09:00 UTC) | Weekly expiry emails via Resend |
+| `/api/reminder` | `0 7 * * 1` (Mondays ~09 Swedish time) | Weekly expiry emails via Resend |
 
 Both routes require `Authorization: Bearer <CRON_SECRET>` in production. Vercel Cron sends this header automatically when `CRON_SECRET` is set in the project env.
 
@@ -93,7 +93,7 @@ Check your deployment logs for:
 ### Change Reminder Frequency
 Edit `vercel.json` schedules (Hobby: once per day max per job):
 - **Daily**: `0 9 * * *`
-- **Weekly**: `0 9 * * 1`
+- **Weekly**: `0 7 * * 1` (~09 Swedish time: 09 winter / 08 summer)
 - **Bi-weekly**: `0 9 1,15 * *`
 
 ### Modify Warning Thresholds
