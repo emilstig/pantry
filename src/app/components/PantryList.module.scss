@@ -81,6 +81,7 @@
 }
 
 .item {
+  position: relative;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   background: #fafafa;
@@ -103,8 +104,8 @@
     color: #991b1b;
   }
 
-  .itemQuantity {
-    color: #b91c1c;
+  .expiryOk {
+    color: #1f2937;
   }
 }
 
@@ -114,6 +115,11 @@
   align-items: flex-start;
   padding: 16px;
   gap: 16px;
+
+  @media (hover: hover) and (pointer: fine) {
+    display: block;
+    gap: 0;
+  }
 }
 
 .itemInfo {
@@ -124,8 +130,8 @@
 .itemHeader {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
+  align-items: flex-start;
+  margin-bottom: 6px;
   gap: 12px;
 }
 
@@ -137,6 +143,39 @@
   flex: 1;
   min-width: 0;
   word-break: break-word;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.statusTag {
+  display: inline-block;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: opacity 0.15s ease;
+
+  @media (hover: hover) and (pointer: fine) {
+    .item:hover &,
+    .item:focus-within & {
+      opacity: 0;
+    }
+  }
+}
+
+.statusUsed {
+  background: #ea580c;
+}
+
+.statusExpired {
+  background: #dc2626;
 }
 
 .itemQuantity {
@@ -153,42 +192,17 @@
 }
 
 .expiryInfo {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-
-.expiryDate {
   font-size: 0.875rem;
-  font-weight: 500;
-  padding: 4px 8px;
-  border-radius: 4px;
-
-  &.good {
-    background: #dcfce7;
-    color: #166534;
-  }
-
-  &.expiring-soon {
-    background: #fef3c7;
-    color: #92400e;
-  }
-
-  &.replace {
-    background: #fed7d7;
-    color: #991b1b;
-  }
-
-  &.expired {
-    background: #f3f4f6;
-    color: #6b7280;
-  }
+  margin-bottom: 8px;
+  line-height: 1.4;
 }
 
-.daysUntil {
-  font-size: 0.75rem;
-  color: #6b7280;
+.expiryOverdue {
+  color: #dc2626;
+}
+
+.expiryOk {
+  color: #16a34a;
 }
 
 .itemNotes {
@@ -210,19 +224,37 @@
   display: flex;
   gap: 8px;
   flex-shrink: 0;
+
+  @media (hover: hover) and (pointer: fine) {
+    position: absolute;
+    top: 14px;
+    right: 12px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+  }
+}
+
+.item:hover .itemActions,
+.item:focus-within .itemActions {
+  @media (hover: hover) and (pointer: fine) {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 
 .editButton,
 .deleteButton,
 .replacedButton,
 .usedButton {
-  background: none;
-  border: 1px solid #d1d5db;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #e5e7eb;
   border-radius: 4px;
   padding: 6px 8px;
   cursor: pointer;
   font-size: 0.875rem;
   transition: all 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 
   &:hover {
     background: #f3f4f6;
@@ -246,25 +278,10 @@
 }
 
 .usedButton {
-  border-color: #f87171;
-
   &:hover {
-    background: #fee2e2;
-    border-color: #dc2626;
+    background: #fff7ed;
+    border-color: #ea580c;
   }
-}
-
-.replacedNotice {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #b91c1c;
-  background: #fee2e2;
-  padding: 4px 8px;
-  border-radius: 4px;
-  margin-bottom: 8px;
 }
 
 .editingItem {
@@ -288,6 +305,11 @@
   border-radius: 4px;
   font-size: 0.875rem;
   margin-bottom: 8px;
+
+  &::placeholder {
+    color: #6b7280;
+    opacity: 1;
+  }
 
   &:focus {
     outline: none;
@@ -349,11 +371,17 @@
   }
 
   .itemContent {
+    display: flex;
     flex-direction: column;
     align-items: stretch;
+    gap: 12px;
+    padding-right: 16px;
   }
 
   .itemActions {
+    position: static;
+    opacity: 1;
+    pointer-events: auto;
     justify-content: flex-end;
   }
 

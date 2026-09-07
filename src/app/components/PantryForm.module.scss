@@ -43,9 +43,15 @@
   border: 1px solid #d1d5db;
   border-radius: 6px;
   font-size: 0.875rem;
+  color: #1f2937;
   transition:
     border-color 0.2s,
     box-shadow 0.2s;
+
+  &::placeholder {
+    color: #6b7280;
+    opacity: 1;
+  }
 
   &:focus {
     outline: none;

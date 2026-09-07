@@ -77,22 +77,27 @@ function sortByExpiryAsc(a: PantryItem, b: PantryItem) {
 function renderItemCard(item: PantryItem): string {
   const days = item.expiry ? getDaysUntilExpiry(item.expiry) : null;
   const markedAsUsed = !item.isReplaced;
+  const expired = days !== null && days < 0;
 
-  let statusColor = "#2563eb";
+  // USED wins when both used and expired; EXPIRED only when not used.
+  let statusColor = "#ea580c";
   let statusText = "USED";
 
-  if (days !== null && days < 0) {
+  if (markedAsUsed) {
+    statusColor = "#ea580c";
+    statusText = "USED";
+  } else if (expired) {
     statusColor = "#dc2626";
     statusText = "EXPIRED";
-  } else if (markedAsUsed) {
-    statusColor = "#7c3aed";
-    statusText = "USED";
   } else if (days !== null && days <= 7) {
     statusColor = "#dc2626";
     statusText = "URGENT";
   } else if (days !== null && days <= 30) {
     statusColor = "#d97706";
     statusText = "SOON";
+  } else {
+    statusColor = "#ea580c";
+    statusText = "USED";
   }
 
   const formatDate = (dateString: string) =>
@@ -101,6 +106,13 @@ function renderItemCard(item: PantryItem): string {
       day: "numeric",
       year: "numeric",
     });
+
+  const expiryColor =
+    days !== null && days < 0
+      ? "#dc2626"
+      : days !== null
+        ? "#16a34a"
+        : "#6b7280";
 
   return `
     <div style="border: 1px solid #e5e7eb; border-radius: 6px; padding: 15px; margin-bottom: 12px; background: #fafafa;">
@@ -122,7 +134,7 @@ function renderItemCard(item: PantryItem): string {
       ${
         item.expiry && days !== null
           ? `
-        <div style="color: #6b7280; font-size: 14px;">
+        <div style="color: ${expiryColor}; font-size: 14px;">
           Expires: ${formatDate(item.expiry)}
           ${
             days < 0
@@ -157,13 +169,12 @@ function renderItemCard(item: PantryItem): string {
   `;
 }
 
-function renderSection(title: string, subtitle: string, items: PantryItem[]) {
+function renderSection(title: string, items: PantryItem[]) {
   if (items.length === 0) return "";
 
   return `
     <div style="margin-bottom: 28px;">
-      <h2 style="color: #374151; margin: 0 0 4px 0; font-size: 18px;">${title}</h2>
-      <p style="color: #6b7280; margin: 0 0 16px 0; font-size: 13px;">${subtitle}</p>
+      <h2 style="color: #374151; margin: 0 0 16px 0; font-size: 18px;">${title}</h2>
       ${items.map(renderItemCard).join("")}
     </div>
   `;
@@ -172,16 +183,8 @@ function renderSection(title: string, subtitle: string, items: PantryItem[]) {
 function generateReminderEmailHTML(items: PantryItem[]): string {
   const appUrl = process.env.APP_URL?.replace(/\/$/, "");
 
-  // Match app "Replace now" groups: used items first, then expired still in stock.
-  const markedAsUsed = items
-    .filter(item => !item.isReplaced)
-    .sort(sortByExpiryAsc);
-  const expiredInStock = items
-    .filter(item => {
-      if (!item.isReplaced || !item.expiry) return false;
-      return getDaysUntilExpiry(item.expiry) < 0;
-    })
-    .sort(sortByExpiryAsc);
+  // Same set as app "Replace now", one section with USED/EXPIRED labels.
+  const replaceNowItems = [...items].sort(sortByExpiryAsc);
 
   const ctaBlock = appUrl
     ? `
@@ -211,16 +214,7 @@ function generateReminderEmailHTML(items: PantryItem[]): string {
       </div>
 
       <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        ${renderSection(
-          "Marked as used",
-          "Restock these — they've been used up.",
-          markedAsUsed
-        )}
-        ${renderSection(
-          "Expired",
-          "Still in the pantry but past their date.",
-          expiredInStock
-        )}
+        ${renderSection("Replace now", replaceNowItems)}
       </div>
 
       ${ctaBlock}

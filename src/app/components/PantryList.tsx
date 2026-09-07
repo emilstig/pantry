@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { PantryItem } from "../types/pantry";
-import { useSettings } from "../contexts/SettingsContext";
-import { getExpiryStatus, getDaysUntilExpiry } from "../utils/expiryUtils";
+import { getDaysUntilExpiry } from "../utils/expiryUtils";
 import styles from "./PantryList.module.scss";
 
 interface PantryListProps {
@@ -27,7 +26,6 @@ export default function PantryList({
   onToggleReplaced,
 }: PantryListProps) {
   const [editingItem, setEditingItem] = useState<EditingItem | null>(null);
-  const { settings } = useSettings();
 
   const startEditing = (item: PantryItem) => {
     setEditingItem({
@@ -207,32 +205,40 @@ export default function PantryList({
           <div className={styles.itemContent}>
             <div className={styles.itemInfo}>
               <div className={styles.itemHeader}>
-                <h4 className={styles.itemName}>{item.name}</h4>
-                <span className={styles.itemQuantity}>
-                  {item.quantity} × {item.unitQuantity}
-                  {item.unitUnit}
-                </span>
-              </div>
-              {item.isReplaced && item.expiry && (
-                <div className={styles.expiryInfo}>
+                <h4 className={styles.itemName}>
+                  {item.name}
+                  <span className={styles.itemQuantity}>
+                    {item.quantity} × {item.unitQuantity}
+                    {item.unitUnit}
+                  </span>
+                </h4>
+                {!item.isReplaced && (
+                  <span className={`${styles.statusTag} ${styles.statusUsed}`}>
+                    USED
+                  </span>
+                )}
+                {item.isReplaced && isExpired && (
                   <span
-                    className={`${styles.expiryDate} ${styles[getExpiryStatus(item.expiry, settings)]}`}
+                    className={`${styles.statusTag} ${styles.statusExpired}`}
                   >
-                    {formatDate(item.expiry)}
+                    EXPIRED
                   </span>
-                  <span className={styles.daysUntil}>
-                    {getDaysUntilExpiry(item.expiry) < 0
-                      ? "Expired"
-                      : `${getDaysUntilExpiry(item.expiry)} days left`}
-                  </span>
-                </div>
-              )}
-              {!item.isReplaced && (
-                <div className={styles.replacedNotice}>
-                  <span role="img" aria-label="used">
-                    🍽️
-                  </span>{" "}
-                  Marked as used
+                )}
+              </div>
+              {item.expiry && typeof daysUntilExpiry === "number" && (
+                <div
+                  className={`${styles.expiryInfo} ${
+                    daysUntilExpiry < 0
+                      ? styles.expiryOverdue
+                      : styles.expiryOk
+                  }`}
+                >
+                  Expires: {formatDate(item.expiry)}{" "}
+                  {daysUntilExpiry < 0
+                    ? `(${Math.abs(daysUntilExpiry)} days overdue)`
+                    : daysUntilExpiry === 0
+                      ? "(Today)"
+                      : `(${daysUntilExpiry} days left)`}
                 </div>
               )}
               {item.notes && <p className={styles.itemNotes}>{item.notes}</p>}
