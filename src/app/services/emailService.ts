@@ -170,8 +170,6 @@ function renderSection(title: string, subtitle: string, items: PantryItem[]) {
 }
 
 function generateReminderEmailHTML(items: PantryItem[]): string {
-  const appUrl = process.env.APP_URL?.replace(/\/$/, "");
-
   // Match app "Replace now" groups: used items first, then expired still in stock.
   const markedAsUsed = items
     .filter(item => !item.isReplaced)
@@ -182,17 +180,6 @@ function generateReminderEmailHTML(items: PantryItem[]): string {
       return getDaysUntilExpiry(item.expiry) < 0;
     })
     .sort(sortByExpiryAsc);
-
-  const ctaBlock = appUrl
-    ? `
-      <div style="text-align: center; margin: 24px 0 8px 0;">
-        <a href="${appUrl}"
-           style="display: inline-block; background: #2563eb; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-size: 15px; font-weight: bold;">
-          Open Pantry Manager
-        </a>
-      </div>
-    `
-    : "";
 
   return `
     <!DOCTYPE html>
@@ -222,8 +209,6 @@ function generateReminderEmailHTML(items: PantryItem[]): string {
           expiredInStock
         )}
       </div>
-
-      ${ctaBlock}
 
       <div style="background: #f8fafc; border-radius: 8px; padding: 20px; margin-top: 20px; text-align: center;">
         <p style="margin: 0; color: #64748b; font-size: 14px;">
